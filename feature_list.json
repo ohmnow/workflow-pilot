@@ -1,0 +1,217 @@
+{
+  "project": "claude-code-workflow-pilot",
+  "version": "0.1.0",
+  "lastUpdated": "2026-01-10",
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Foundation",
+      "status": "completed",
+      "features": [
+        {
+          "id": "F001",
+          "name": "TypeScript project setup",
+          "status": "completed",
+          "priority": "high",
+          "files": ["package.json", "tsconfig.json"]
+        },
+        {
+          "id": "F002",
+          "name": "App specification (XML)",
+          "status": "completed",
+          "priority": "high",
+          "files": ["app-spec.xml"]
+        },
+        {
+          "id": "F003",
+          "name": "Feature tracking system",
+          "status": "completed",
+          "priority": "high",
+          "files": ["feature_list.json"]
+        },
+        {
+          "id": "F004",
+          "name": "Project context (CLAUDE.md)",
+          "status": "completed",
+          "priority": "high",
+          "files": ["CLAUDE.md"]
+        },
+        {
+          "id": "F005",
+          "name": "Hook infrastructure",
+          "status": "completed",
+          "priority": "high",
+          "files": ["hooks/hooks.json", "src/index.ts"]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "AI Integration",
+      "status": "completed",
+      "features": [
+        {
+          "id": "F006",
+          "name": "Transcript parser",
+          "status": "completed",
+          "priority": "high",
+          "files": ["src/analyzer/transcript-parser.ts"]
+        },
+        {
+          "id": "F007",
+          "name": "Context builder",
+          "status": "completed",
+          "priority": "high",
+          "files": ["src/analyzer/context-builder.ts"]
+        },
+        {
+          "id": "F008",
+          "name": "Claude API client",
+          "status": "completed",
+          "priority": "high",
+          "files": ["src/analyzer/ai-analyzer.ts"]
+        },
+        {
+          "id": "F009",
+          "name": "Analysis prompt design",
+          "status": "completed",
+          "priority": "high",
+          "files": ["prompts/workflow-analysis.md"]
+        },
+        {
+          "id": "F010",
+          "name": "Suggestion formatter",
+          "status": "completed",
+          "priority": "medium",
+          "files": ["src/output/suggestion-formatter.ts"]
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "name": "Rule Engine",
+      "status": "completed",
+      "features": [
+        {
+          "id": "F011",
+          "name": "Rule matching framework",
+          "status": "completed",
+          "priority": "high",
+          "files": ["src/rules/index.ts"]
+        },
+        {
+          "id": "F012",
+          "name": "Testing rules",
+          "status": "completed",
+          "priority": "medium",
+          "files": ["src/rules/testing.ts"]
+        },
+        {
+          "id": "F013",
+          "name": "Git rules",
+          "status": "completed",
+          "priority": "medium",
+          "files": ["src/rules/git.ts"]
+        },
+        {
+          "id": "F014",
+          "name": "Refactoring rules",
+          "status": "in_progress",
+          "priority": "medium",
+          "files": ["src/rules/refactoring.ts"]
+        },
+        {
+          "id": "F015",
+          "name": "Security rules",
+          "status": "in_progress",
+          "priority": "medium",
+          "files": ["src/rules/security.ts"]
+        },
+        {
+          "id": "F016",
+          "name": "Shipping rules",
+          "status": "in_progress",
+          "priority": "medium",
+          "files": ["src/rules/shipping.ts"]
+        },
+        {
+          "id": "F017",
+          "name": "Claude Code best practices rules",
+          "status": "completed",
+          "priority": "high",
+          "files": ["src/rules/claude-code.ts"]
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "name": "Knowledge Base",
+      "status": "completed",
+      "features": [
+        {
+          "id": "F018",
+          "name": "Best practices documentation",
+          "status": "completed",
+          "priority": "medium",
+          "files": ["src/knowledge/best-practices.md"]
+        },
+        {
+          "id": "F019",
+          "name": "Subagent usage guide",
+          "status": "completed",
+          "priority": "medium",
+          "files": ["src/knowledge/subagent-guide.md"]
+        },
+        {
+          "id": "F020",
+          "name": "Skills usage guide",
+          "status": "completed",
+          "priority": "medium",
+          "files": ["src/knowledge/skills-guide.md"]
+        },
+        {
+          "id": "F021",
+          "name": "Hooks patterns guide",
+          "status": "completed",
+          "priority": "low",
+          "files": ["src/knowledge/hooks-guide.md"]
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "name": "Polish",
+      "status": "in_progress",
+      "features": [
+        {
+          "id": "F022",
+          "name": "Configuration system",
+          "status": "completed",
+          "priority": "medium",
+          "files": ["config/default.json"]
+        },
+        {
+          "id": "F023",
+          "name": "Adaptive verbosity logic",
+          "status": "completed",
+          "priority": "low",
+          "files": ["src/output/suggestion-formatter.ts"]
+        },
+        {
+          "id": "F024",
+          "name": "Unit tests",
+          "status": "pending",
+          "priority": "medium",
+          "files": ["src/**/*.test.ts"]
+        },
+        {
+          "id": "F025",
+          "name": "Documentation (README)",
+          "status": "in_progress",
+          "priority": "low",
+          "files": ["README.md"]
+        }
+      ]
+    }
+  ]
+}

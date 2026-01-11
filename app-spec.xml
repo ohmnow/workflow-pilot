@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application>
+  <metadata>
+    <name>Claude Code Workflow Pilot</name>
+    <version>0.1.0</version>
+    <type>claude-code-plugin</type>
+    <description>
+      AI-powered Claude Code plugin that monitors conversation context and provides
+      intelligent workflow guidance to help solo developers ship production-grade apps
+      using professional development practices and agentic coding techniques.
+    </description>
+  </metadata>
+
+  <goals>
+    <goal id="workflow-guidance">
+      Provide proactive suggestions for professional development workflows
+      (testing, git, refactoring, shipping)
+    </goal>
+    <goal id="claude-code-mastery">
+      Guide users on effective use of Claude Code features
+      (subagents, skills, hooks, plan mode)
+    </goal>
+    <goal id="agentic-techniques">
+      Teach agentic coding patterns that maximize autonomous capabilities
+      for solo developers
+    </goal>
+  </goals>
+
+  <architecture>
+    <component name="hook-system">
+      <description>Entry points that trigger on Claude Code events</description>
+      <events>
+        <event name="UserPromptSubmit">Analyze user prompts before processing</event>
+        <event name="PostToolUse">Monitor completed tool actions</event>
+        <event name="Stop">End-of-response analysis</event>
+      </events>
+    </component>
+
+    <component name="transcript-parser">
+      <description>Parse JSONL transcript files from Claude Code</description>
+      <input>File path to transcript.jsonl</input>
+      <output>Structured conversation history</output>
+    </component>
+
+    <component name="context-builder">
+      <description>Assemble context for AI analysis</description>
+      <includes>
+        <item>Recent conversation messages</item>
+        <item>Current user intent</item>
+        <item>Active rule triggers</item>
+        <item>Knowledge base excerpts</item>
+      </includes>
+    </component>
+
+    <component name="ai-analyzer">
+      <description>Claude API integration for deep analysis</description>
+      <auth-priority>
+        <option priority="1">ANTHROPIC_API_KEY env var</option>
+        <option priority="2">claude CLI subprocess</option>
+        <option priority="3">Rule-based fallback</option>
+      </auth-priority>
+    </component>
+
+    <component name="rule-engine">
+      <description>Pattern matching for common workflow triggers</description>
+      <categories>
+        <category name="testing">Test-related workflow guidance</category>
+        <category name="git">Version control best practices</category>
+        <category name="refactoring">Code improvement suggestions</category>
+        <category name="security">Security awareness</category>
+        <category name="shipping">Production readiness</category>
+        <category name="claude-code">CC feature guidance</category>
+      </categories>
+    </component>
+
+    <component name="suggestion-formatter">
+      <description>Format suggestions for context injection</description>
+      <verbosity-modes>
+        <mode name="concise">Brief one-liner suggestions</mode>
+        <mode name="detailed">Include reasoning and commands</mode>
+        <mode name="adaptive">Context-appropriate verbosity</mode>
+      </verbosity-modes>
+    </component>
+
+    <component name="knowledge-base">
+      <description>Embedded best practices and guides</description>
+      <documents>
+        <doc name="best-practices.md">General development practices</doc>
+        <doc name="subagent-guide.md">When and how to use subagents</doc>
+        <doc name="skills-guide.md">Available skills and usage patterns</doc>
+        <doc name="hooks-guide.md">Hook patterns and examples</doc>
+      </documents>
+    </component>
+  </architecture>
+
+  <rules>
+    <rule-set category="testing">
+      <rule trigger="code-written" suggestion="Consider running tests" />
+      <rule trigger="bug-fixed" suggestion="Add regression test" />
+      <rule trigger="pre-commit" suggestion="Verify tests pass" />
+    </rule-set>
+
+    <rule-set category="git">
+      <rule trigger="significant-changes" suggestion="Commit your progress" />
+      <rule trigger="task-switch" suggestion="Commit before switching" />
+      <rule trigger="feature-complete" suggestion="Create a PR" />
+    </rule-set>
+
+    <rule-set category="refactoring">
+      <rule trigger="duplicate-code" suggestion="Extract common logic" />
+      <rule trigger="long-function" suggestion="Break into smaller functions" />
+      <rule trigger="complex-conditional" suggestion="Simplify conditionals" />
+    </rule-set>
+
+    <rule-set category="security">
+      <rule trigger="hardcoded-secret" suggestion="Use environment variables" severity="high" />
+      <rule trigger="sql-string" suggestion="Use parameterized queries" />
+      <rule trigger="user-input" suggestion="Validate and sanitize" />
+    </rule-set>
+
+    <rule-set category="shipping">
+      <rule trigger="feature-done" suggestion="Review error handling" />
+      <rule trigger="pre-deploy" suggestion="Check logging and monitoring" />
+      <rule trigger="api-change" suggestion="Update documentation" />
+    </rule-set>
+
+    <rule-set category="claude-code">
+      <rule trigger="large-task" suggestion="Use Plan mode first" />
+      <rule trigger="multi-file-search" suggestion="Use Explore subagent" />
+      <rule trigger="repetitive-work" suggestion="Create a skill" />
+      <rule trigger="multiple-failures" suggestion="Step back and plan" />
+      <rule trigger="large-context" suggestion="Use /compact or new session" />
+    </rule-set>
+  </rules>
+
+  <configuration>
+    <option name="rules.*.enabled" type="boolean" default="true" />
+    <option name="rules.*.strictness" type="enum" values="low,medium,high" default="medium" />
+    <option name="ai.enabled" type="boolean" default="true" />
+    <option name="ai.model" type="string" default="claude-sonnet-4-20250514" />
+    <option name="verbosity" type="enum" values="concise,detailed,adaptive" default="adaptive" />
+  </configuration>
+</application>

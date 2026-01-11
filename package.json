@@ -1,0 +1,37 @@
+{
+  "name": "claude-code-workflow-pilot",
+  "version": "0.1.0",
+  "description": "AI-powered Claude Code plugin for workflow guidance and best practices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "vitest",
+    "lint": "eslint src/",
+    "hook": "node dist/index.js"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "workflow",
+    "best-practices",
+    "agentic-coding"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "eslint": "^8.55.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
