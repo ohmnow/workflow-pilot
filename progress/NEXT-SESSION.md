@@ -1,8 +1,8 @@
 # Workflow Pilot - Next Session Guide
 
 **Last Updated:** 2026-01-11
-**Version:** 0.4.0
-**Status:** Production Ready (Expanded Rules)
+**Version:** 0.5.0
+**Status:** Production Ready (Training Mode)
 
 ---
 
@@ -11,7 +11,7 @@
 ```bash
 cd "/Users/chris/cc-projects/claude code terminal plugin"
 npm run build
-npm test -- --run  # Should pass 25 tests
+npm test -- --run  # Should pass 57 tests
 ```
 
 ---
@@ -63,24 +63,7 @@ git add .env                   # Should show red alert
 
 ---
 
-### Priority 2: Training Mode Polish
-
-**What's Done:**
-- Intent capture prompt displays at conversation start
-- Mode switching works via env var or config
-
-**What's Missing:**
-- Training mode explanations aren't yet integrated into suggestions
-- No "why" explanations attached to warnings
-- No examples shown with tips
-
-**Files to Modify:**
-- `src/output/suggestion-formatter.ts` - Add training mode explanations
-- `src/rules/index.ts` - Add `explanation` field to rules
-
----
-
-### Priority 3: User-Specific Config
+### Priority 2: User-Specific Config
 
 **Current:** Config is global or project-level
 **Desired:** Per-project customization with rule presets
@@ -92,7 +75,7 @@ git add .env                   # Should show red alert
 
 ---
 
-### Priority 4: Autonomous Senior Dev Mode
+### Priority 3: Autonomous Senior Dev Mode
 
 **Vision:** Plugin that can work from specs/PRDs to guide development
 
@@ -144,26 +127,26 @@ cat /tmp/workflow-pilot-state.json  # Check cooldown state
 ## Recent Commits
 
 ```
+325fdb1 Add training mode with deep explanations and examples
 6122ee5 Add 8 new workflow rules with comprehensive tests
 dd0a127 Update documentation and add next session guide
 abb83f0 Add configuration system with three operating modes
 f72843e Add progress tracking for session continuity
-f496cdd Add PreToolUse hook for blocking dangerous commands
 ```
 
 ---
 
 ## Notes for Next Instance
 
-1. **Rule expansion complete** - 25 rules now covering: testing, git, security, claude-code, refactoring, type-safety, error-handling, documentation, production, code-quality
+1. **Training mode complete** - Set `WORKFLOW_PILOT_MODE=training` for educational explanations with each suggestion
 
-2. **PreToolUse needs fresh terminal** - The blocking logic is implemented but needs testing
+2. **57 tests passing** - 25 rule tests + 32 intent matcher tests
 
-3. **Cooldowns are working** - Check `/tmp/workflow-pilot-state.json` to see trigger history
+3. **Intent matcher added** - New fuzzy matching for detecting user intent (committing secrets, etc.)
 
-4. **Config system is flexible** - Can override via env vars for quick testing
+4. **PreToolUse needs fresh terminal** - The blocking logic is implemented but needs testing
 
-5. **Tests are comprehensive** - 25 tests pass, covering all rule categories
+5. **Cooldowns are working** - Check `/tmp/workflow-pilot-state.json` to see trigger history
 
 6. **User vision:** Wants plugin to eventually work from PRDs/specs as autonomous senior dev
 
