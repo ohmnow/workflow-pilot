@@ -57,13 +57,24 @@ Add the following to your Claude Code settings (`~/.claude/settings.json`):
 
 ### 3. (Optional) Enable AI Analysis
 
-Set your Anthropic API key for enhanced AI-powered suggestions:
+The plugin works great with rule-based analysis alone. For AI-enhanced suggestions, you have two options:
 
+**Option A: API Key (Recommended)**
 ```bash
-export ANTHROPIC_API_KEY="your-api-key"
+export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-Without this, the plugin uses rule-based analysis only.
+**Option B: CLI Fallback (Experimental)**
+Uses your existing Claude Code OAuth authentication:
+```bash
+export WORKFLOW_PILOT_USE_CLI=1
+```
+Note: CLI has startup overhead that may cause timeouts in hooks.
+
+**Debug Mode:**
+```bash
+export WORKFLOW_PILOT_DEBUG=1
+```
 
 ## What It Does
 

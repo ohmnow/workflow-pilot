@@ -2,9 +2,11 @@
  * AI Analyzer
  *
  * Uses Claude API to provide intelligent analysis of conversation context.
+ * Falls back to spawning `claude` CLI to use existing user authentication.
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { spawn } from 'child_process';
 import { AnalysisContext } from './context-builder.js';
 
 export interface AISuggestion {
@@ -69,44 +71,121 @@ function getClient(): Anthropic | null {
 }
 
 /**
- * Analyze context using Claude API
+ * Analyze context using Claude API or CLI fallback
  */
 export async function analyzeWithAI(context: AnalysisContext): Promise<AISuggestion[]> {
   const client = getClient();
+  const prompt = buildPrompt(context);
 
-  if (!client) {
-    // No API key available, skip AI analysis
-    return [];
+  // Try API first if available
+  if (client) {
+    try {
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      });
+
+      const textContent = response.content.find((block) => block.type === 'text');
+      if (textContent && textContent.type === 'text') {
+        const suggestions = parseAIResponse(textContent.text);
+        return suggestions.map((s) => ({ ...s, source: 'ai' as const }));
+      }
+    } catch (error) {
+      // Fall through to CLI fallback
+      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+        console.error('[WP Debug] API failed, trying CLI fallback:', error);
+      }
+    }
   }
 
-  try {
-    const prompt = buildPrompt(context);
+  // Fallback: Use claude CLI with user's existing authentication
+  // Only attempt if explicitly enabled (CLI has startup overhead)
+  if (process.env.WORKFLOW_PILOT_USE_CLI === '1') {
+    try {
+      const cliResponse = await analyzeWithCLI(prompt);
+      if (cliResponse) {
+        const suggestions = parseAIResponse(cliResponse);
+        return suggestions.map((s) => ({ ...s, source: 'ai' as const }));
+      }
+    } catch (error) {
+      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+        console.error('[WP Debug] CLI fallback failed:', error);
+      }
+    }
+  }
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 500,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
+  return [];
+}
 
-    // Extract text content from response
-    const textContent = response.content.find((block) => block.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
-      return [];
+/**
+ * Use claude CLI to analyze context (uses user's existing auth)
+ */
+async function analyzeWithCLI(prompt: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    // Use --print for non-interactive output
+    // Use haiku for faster response times in hooks
+    const args = [
+      '--print',
+      '--model', 'haiku',
+      '--max-turns', '1',
+      prompt
+    ];
+
+    if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      console.error('[WP Debug] Spawning claude CLI...');
     }
 
-    // Parse JSON response
-    const suggestions = parseAIResponse(textContent.text);
-    return suggestions.map((s) => ({ ...s, source: 'ai' as const }));
-  } catch (error) {
-    // Silently fail - AI analysis is optional
-    console.error('AI analysis failed:', error);
-    return [];
-  }
+    const child = spawn('claude', args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout?.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr?.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code) => {
+      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+        console.error('[WP Debug] CLI completed, exit code:', code);
+      }
+      if (code === 0 && stdout) {
+        resolve(stdout.trim());
+      } else {
+        if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+          console.error('[WP Debug] CLI stderr:', stderr);
+        }
+        resolve(null);
+      }
+    });
+
+    child.on('error', (err) => {
+      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+        console.error('[WP Debug] CLI spawn error:', err);
+      }
+      resolve(null);
+    });
+
+    // 45 second timeout (hooks have 60s limit)
+    setTimeout(() => {
+      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+        console.error('[WP Debug] CLI timeout, killing process');
+      }
+      child.kill('SIGTERM');
+      resolve(null);
+    }, 45000);
+  });
 }
 
 /**
@@ -182,8 +261,14 @@ function parseAIResponse(text: string): Omit<AISuggestion, 'source'>[] {
 }
 
 /**
- * Check if AI analysis is available
+ * Check if AI analysis is available (API key or CLI)
  */
 export function isAIAvailable(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
+  // API key takes priority
+  if (process.env.ANTHROPIC_API_KEY) {
+    return true;
+  }
+  // CLI fallback is always potentially available
+  // (will fail gracefully if claude isn't installed/authenticated)
+  return true;
 }
