@@ -309,6 +309,182 @@ const rules: Rule[] = [
     reasoning: 'Environment files typically contain sensitive configuration',
     priority: 'high',
   },
+
+  // ============================================
+  // New Rules: Type Safety, Error Handling, etc.
+  // ============================================
+
+  // Type Safety - Suggest TypeScript for JavaScript files
+  {
+    id: 'consider-typescript',
+    category: 'type-safety',
+    patterns: [],
+    level: 'info',
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Write' && ctx.toolInfo?.name !== 'Edit') return false;
+      const filePath = String(ctx.toolInfo?.input?.file_path || '');
+      // Check if writing a .js file (not .mjs, .cjs config files)
+      const isJsFile = /\.(js|jsx)$/.test(filePath) && !filePath.includes('.config.');
+      // Don't trigger for test files or simple scripts
+      const isSubstantialFile = !filePath.includes('test') && !filePath.includes('spec');
+      return isJsFile && isSubstantialFile;
+    },
+    suggestion: '💡 Consider using TypeScript (.ts/.tsx) for better type safety and IDE support.',
+    reasoning: 'TypeScript catches type errors at compile time and improves maintainability',
+    priority: 'low',
+  },
+
+  // Error Handling - Detect async without try/catch
+  {
+    id: 'async-error-handling',
+    category: 'error-handling',
+    patterns: [],
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Write' && ctx.toolInfo?.name !== 'Edit') return false;
+      const content = String(ctx.toolInfo?.input?.new_string || ctx.toolInfo?.input?.content || '');
+      // Check for async functions or await without apparent error handling
+      const hasAsync = /async\s+(?:function|\(|[a-zA-Z])/.test(content) || content.includes('await ');
+      const hasTryCatch = content.includes('try {') || content.includes('try{');
+      const hasCatch = content.includes('.catch(') || content.includes('.catch (');
+      const hasErrorHandling = hasTryCatch || hasCatch;
+      // Only trigger if async code is present without any error handling
+      return hasAsync && !hasErrorHandling && content.length > 100;
+    },
+    suggestion: 'Consider adding error handling (try/catch or .catch()) for async operations',
+    reasoning: 'Unhandled promise rejections can cause silent failures or crashes',
+    priority: 'medium',
+  },
+
+  // PR Readiness - Check before creating PR
+  {
+    id: 'pr-readiness-check',
+    category: 'git',
+    patterns: [],
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Bash') return false;
+      const cmd = String(ctx.toolInfo?.input?.command || '').toLowerCase();
+      const isCreatingPR = cmd.includes('gh pr create') || cmd.includes('gh pr --create');
+      // Warn if no recent test run
+      return isCreatingPR && !ctx.lastTestRun;
+    },
+    suggestion: 'Run tests before creating a PR to ensure all checks pass',
+    reasoning: 'PRs without test verification often fail CI checks',
+    priority: 'high',
+  },
+
+  // Dependency Security - Suggest npm audit after install
+  {
+    id: 'npm-audit-reminder',
+    category: 'security',
+    patterns: [],
+    level: 'info',
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Bash') return false;
+      const cmd = String(ctx.toolInfo?.input?.command || '');
+      // Check for npm/yarn/pnpm install
+      const isInstall =
+        /npm\s+i(?:nstall)?(?:\s|$)/.test(cmd) ||
+        /yarn\s+(?:add|install)/.test(cmd) ||
+        /pnpm\s+(?:add|install)/.test(cmd);
+      // Only for installs that add packages (not just reinstalling)
+      const addsPackage = cmd.includes(' ') && !cmd.endsWith('install') && !cmd.endsWith('i');
+      return isInstall && addsPackage;
+    },
+    suggestion: '💡 Consider running `npm audit` to check for security vulnerabilities in new dependencies.',
+    reasoning: 'New packages may have known security issues',
+    priority: 'low',
+  },
+
+  // Package.json modification - Suggest dependency review
+  {
+    id: 'package-json-modified',
+    category: 'security',
+    patterns: [],
+    level: 'info',
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Edit') return false;
+      const filePath = String(ctx.toolInfo?.input?.file_path || '');
+      return filePath.endsWith('package.json');
+    },
+    suggestion: '💡 After modifying package.json, run `npm install` and `npm audit` to verify dependencies.',
+    reasoning: 'Dependency changes should be verified for compatibility and security',
+    priority: 'low',
+  },
+
+  // Documentation - Suggest JSDoc for exported functions
+  {
+    id: 'document-exports',
+    category: 'documentation',
+    patterns: [],
+    level: 'info',
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Write' && ctx.toolInfo?.name !== 'Edit') return false;
+      const content = String(ctx.toolInfo?.input?.new_string || ctx.toolInfo?.input?.content || '');
+      // Check for exported functions/classes without JSDoc
+      const hasExport = /export\s+(?:async\s+)?(?:function|class|const|interface)/.test(content);
+      const hasJsDoc = content.includes('/**');
+      const isSubstantialCode = content.length > 200;
+      // Only trigger for substantial exports without documentation
+      return hasExport && !hasJsDoc && isSubstantialCode;
+    },
+    suggestion: '💡 Consider adding JSDoc comments to exported functions for better documentation.',
+    reasoning: 'Documentation helps others (and future you) understand the code',
+    priority: 'low',
+  },
+
+  // Build before deploy - Check before deployment commands
+  {
+    id: 'build-before-deploy',
+    category: 'production',
+    patterns: [],
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Bash') return false;
+      const cmd = String(ctx.toolInfo?.input?.command || '').toLowerCase();
+      const isDeploying =
+        cmd.includes('vercel') ||
+        cmd.includes('netlify deploy') ||
+        cmd.includes('firebase deploy') ||
+        cmd.includes('npm publish') ||
+        cmd.includes('docker push');
+      // Check if build was run recently
+      const recentBuild = ctx.recentToolUses.some(t => {
+        if (t.toolName !== 'Bash') return false;
+        const prevCmd = String(t.toolInput?.command || '').toLowerCase();
+        return prevCmd.includes('npm run build') || prevCmd.includes('yarn build') || prevCmd.includes('tsc');
+      });
+      return isDeploying && !recentBuild;
+    },
+    suggestion: 'Run a fresh build before deploying to catch any compilation errors',
+    reasoning: 'Deploying without a recent build may push stale or broken code',
+    priority: 'high',
+  },
+
+  // Lint before commit - Suggest running linter
+  {
+    id: 'lint-before-commit',
+    category: 'code-quality',
+    patterns: [],
+    level: 'info',
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Bash') return false;
+      const cmd = String(ctx.toolInfo?.input?.command || '');
+      const isCommitting = cmd.includes('git commit');
+      // Check if lint was run recently
+      const recentLint = ctx.recentToolUses.some(t => {
+        if (t.toolName !== 'Bash') return false;
+        const prevCmd = String(t.toolInput?.command || '').toLowerCase();
+        return prevCmd.includes('lint') || prevCmd.includes('eslint') || prevCmd.includes('prettier');
+      });
+      // Only suggest if there were code changes and no recent lint
+      const hasCodeChanges = ctx.recentToolUses.some(
+        t => t.toolName === 'Edit' || t.toolName === 'Write'
+      );
+      return isCommitting && hasCodeChanges && !recentLint;
+    },
+    suggestion: '💡 Consider running the linter before committing to catch formatting/style issues.',
+    reasoning: 'Linting ensures consistent code style and catches common issues',
+    priority: 'low',
+  },
 ];
 
 /**
