@@ -6,6 +6,7 @@
 
 import { AnalysisContext, ContextPattern } from '../analyzer/context-builder.js';
 import { matchIntent, matchIntentMultiple, hasSensitiveMention } from './intent-matcher.js';
+import { evaluateOrchestratorRules } from '../orchestrator/rules.js';
 
 export interface RuleSuggestion {
   type: string;
@@ -542,6 +543,7 @@ const rules: Rule[] = [
 export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
   const suggestions: RuleSuggestion[] = [];
 
+  // Evaluate standard rules
   for (const rule of rules) {
     try {
       if (rule.condition(context)) {
@@ -562,6 +564,10 @@ export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
       continue;
     }
   }
+
+  // Evaluate orchestrator-specific rules (only active in orchestrator mode)
+  const orchestratorSuggestions = evaluateOrchestratorRules(context);
+  suggestions.push(...orchestratorSuggestions);
 
   // Deduplicate and prioritize
   return deduplicateSuggestions(suggestions);

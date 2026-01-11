@@ -98,6 +98,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(mockExecSync).toHaveBeenCalledWith(
@@ -119,6 +120,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(mockExecSync).not.toHaveBeenCalled();
@@ -140,6 +142,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(mockFs.mkdirSync).toHaveBeenCalledWith(
@@ -162,6 +165,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(mockFs.readFileSync).toHaveBeenCalledWith(testSettingsPath, 'utf-8');
@@ -185,6 +189,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(result.existingKey).toBe('value');
@@ -206,6 +211,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(result.hooks.UserPromptSubmit).toBeDefined();
@@ -226,6 +232,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(result.hooks.PreToolUse).toBeDefined();
@@ -246,6 +253,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(result.hooks.PostToolUse).toBeDefined();
@@ -266,15 +274,14 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        testSettingsPath,
-        expect.any(String),
-        'utf-8'
-      );
+      // First call is for config file, second is for settings
+      const settingsCall = mockFs.writeFileSync.mock.calls.find(call => call[0] === testSettingsPath);
+      expect(settingsCall).toBeDefined();
 
-      const writtenContent = JSON.parse(mockFs.writeFileSync.mock.calls[0][1]);
+      const writtenContent = JSON.parse(settingsCall[1]);
       expect(writtenContent.hooks.UserPromptSubmit).toBeDefined();
       expect(writtenContent.hooks.PostToolUse).toBeDefined();
     });
@@ -291,6 +298,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       })).rejects.toThrow('Test error');
     });
 
@@ -307,6 +315,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       })).rejects.toThrow();
     });
   });
@@ -325,6 +334,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(consoleLogs.some(msg => msg.includes('Installation complete'))).toBe(true);
@@ -343,6 +353,7 @@ describe('Install Script', () => {
         execSync: mockExecSync,
         pluginDir: testPluginDir,
         settingsPath: testSettingsPath,
+        interactive: false,
       });
 
       expect(consoleLogs.some(msg => msg.includes('uninstall.js'))).toBe(true);
