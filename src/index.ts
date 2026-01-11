@@ -265,9 +265,9 @@ async function main(): Promise<void> {
       console.error(`${PLUGIN_BORDER}`);
       console.error('');
 
-      // Exit with code 1 so stderr shows to user
-      // Note: This means context won't be injected to Claude for this turn
-      process.exit(1);
+      // Exit with code 2 to signal "block" to Claude Code
+      // This prevents the action from proceeding
+      process.exit(2);
     }
 
     // INFO TIPS: Educational content for the user (subtle, same border)

@@ -58,6 +58,14 @@ describe('Install Script', () => {
       expect(config.UserPromptSubmit[0].hooks[0].command).toContain(testPluginDir);
     });
 
+    it('generates correct PreToolUse config with .* matcher', () => {
+      const config = getHookConfig(testPluginDir);
+
+      expect(config.PreToolUse).toBeDefined();
+      expect(config.PreToolUse[0].matcher).toBe('.*');
+      expect(config.PreToolUse[0].hooks[0].type).toBe('command');
+    });
+
     it('generates correct PostToolUse config with .* matcher', () => {
       const config = getHookConfig(testPluginDir);
 
@@ -71,6 +79,7 @@ describe('Install Script', () => {
       const expectedPath = path.join(testPluginDir, 'dist', 'index.js');
 
       expect(config.UserPromptSubmit[0].hooks[0].command).toBe(`node "${expectedPath}"`);
+      expect(config.PreToolUse[0].hooks[0].command).toBe(`node "${expectedPath}"`);
       expect(config.PostToolUse[0].hooks[0].command).toBe(`node "${expectedPath}"`);
     });
   });
@@ -202,6 +211,26 @@ describe('Install Script', () => {
       expect(result.hooks.UserPromptSubmit).toBeDefined();
       expect(result.hooks.UserPromptSubmit[0].matcher).toBeUndefined();
       expect(result.hooks.UserPromptSubmit[0].hooks[0].type).toBe('command');
+    });
+
+    it('adds PreToolUse hook with .* matcher', async () => {
+      mockFs.existsSync.mockImplementation((p) => {
+        if (p === testDistPath) return true;
+        if (p === testSettingsPath) return true;
+        return false;
+      });
+      mockFs.readFileSync.mockReturnValue('{}');
+
+      const result = await install({
+        fs: mockFs,
+        execSync: mockExecSync,
+        pluginDir: testPluginDir,
+        settingsPath: testSettingsPath,
+      });
+
+      expect(result.hooks.PreToolUse).toBeDefined();
+      expect(result.hooks.PreToolUse[0].matcher).toBe('.*');
+      expect(result.hooks.PreToolUse[0].hooks[0].type).toBe('command');
     });
 
     it('adds PostToolUse hook with .* matcher', async () => {

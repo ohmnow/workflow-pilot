@@ -18,13 +18,25 @@ const CLAUDE_SETTINGS_PATH = path.join(process.env.HOME, '.claude', 'settings.js
  * Generate hook configuration for the plugin
  */
 function getHookConfig(pluginDir) {
+  const command = `node "${path.join(pluginDir, 'dist', 'index.js')}"`;
   return {
     UserPromptSubmit: [
       {
         hooks: [
           {
             type: "command",
-            command: `node "${path.join(pluginDir, 'dist', 'index.js')}"`
+            command
+          }
+        ]
+      }
+    ],
+    PreToolUse: [
+      {
+        matcher: ".*",
+        hooks: [
+          {
+            type: "command",
+            command
           }
         ]
       }
@@ -35,7 +47,7 @@ function getHookConfig(pluginDir) {
         hooks: [
           {
             type: "command",
-            command: `node "${path.join(pluginDir, 'dist', 'index.js')}"`
+            command
           }
         ]
       }
