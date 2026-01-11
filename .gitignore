@@ -25,3 +25,6 @@ npm-debug.log*
 
 # Test coverage
 coverage/
+
+# Playwright MCP screenshots
+.playwright-mcp/
