@@ -5,6 +5,7 @@
  */
 
 import { AnalysisContext, ContextPattern } from '../analyzer/context-builder.js';
+import { matchIntent, matchIntentMultiple, hasSensitiveMention } from './intent-matcher.js';
 
 export interface RuleSuggestion {
   type: string;
@@ -14,6 +15,10 @@ export interface RuleSuggestion {
   source: 'rule' | 'ai';
   level: 'critical' | 'warning' | 'info';  // Visual tier for user display
   ruleId?: string;  // Rule ID for cooldown tracking
+  /** Deep explanation for training mode */
+  explanation?: string;
+  /** Example for training mode */
+  example?: string;
 }
 
 interface Rule {
@@ -25,6 +30,10 @@ interface Rule {
   reasoning: string;
   priority: 'low' | 'medium' | 'high';
   level?: 'critical' | 'warning' | 'info';  // critical=red, warning=gold, info=blue (default: warning)
+  /** Deep explanation for training mode - explains WHY this matters */
+  explanation?: string;
+  /** Example of the practice in action (for training mode) */
+  example?: string;
 }
 
 // Define workflow rules
@@ -38,6 +47,8 @@ const rules: Rule[] = [
     suggestion: 'Consider running tests to verify your changes',
     reasoning: 'Code changes were made without a recent test run',
     priority: 'medium',
+    explanation: 'Tests catch bugs at the moment you introduce them, when the code is fresh in your mind. Debugging a test failure now takes minutes; debugging the same bug in production takes hours. The cost of fixing bugs increases 10x at each stage: development → code review → QA → production.',
+    example: 'After editing src/auth.ts, run: npm test -- --grep "auth"',
   },
   {
     id: 'test-before-commit',
@@ -53,6 +64,8 @@ const rules: Rule[] = [
     suggestion: 'Run tests before committing to catch issues early',
     reasoning: 'About to commit without recent test verification',
     priority: 'high',
+    explanation: 'A commit is a promise that the code works. Breaking this promise wastes your teammates\' time and creates "broken window" syndrome where people stop trusting the test suite. CI will catch it anyway—but then you\'ll context-switch back to fix it later.',
+    example: 'npm test && git commit -m "Add feature"',
   },
 
   // Git rules
@@ -64,6 +77,8 @@ const rules: Rule[] = [
     suggestion: 'Consider committing your progress to save your work',
     reasoning: 'Extended coding session with uncommitted changes',
     priority: 'medium',
+    explanation: '"Commit early, commit often" isn\'t just a saying—it\'s insurance. Each commit is a checkpoint you can return to. Without commits, a wrong turn means losing hours of work. Small commits also make code review easier and git bisect possible.',
+    example: 'git add -p (stage interactively) → git commit -m "WIP: Add user validation"',
   },
   {
     id: 'commit-before-switch',
@@ -84,6 +99,8 @@ const rules: Rule[] = [
     suggestion: 'Commit current changes before switching tasks',
     reasoning: 'Switching tasks with uncommitted work',
     priority: 'high',
+    explanation: 'Context-switching with uncommitted changes leads to "mystery commits" later—changes from two different tasks mixed together. This makes rollbacks dangerous and code review confusing. A clean commit now preserves your mental context.',
+    example: 'git stash -m "WIP: feature X" OR git commit -m "WIP: partial progress on X"',
   },
 
   // Refactoring rules
@@ -109,6 +126,8 @@ const rules: Rule[] = [
     suggestion: 'Consider a quick refactoring pass before committing',
     reasoning: 'Good time to clean up code after completing a feature',
     priority: 'low',
+    explanation: 'The best time to refactor is right after making something work—the code is fresh in your mind. "Make it work, make it right, make it fast." Skipping "make it right" creates tech debt that compounds over time.',
+    example: 'Look for: duplicated code, unclear names, functions doing too much, magic numbers',
   },
 
   // Claude Code best practices
@@ -120,6 +139,8 @@ const rules: Rule[] = [
     suggestion: 'Consider using Plan mode to design your approach first',
     reasoning: 'Complex task detected - planning helps ensure better outcomes',
     priority: 'medium',
+    explanation: 'Plan mode lets Claude explore the codebase and design an approach before writing code. This prevents wasted effort from wrong assumptions and ensures architectural decisions are made upfront. Planning for 5 minutes can save 30 minutes of rework.',
+    example: 'Type: /plan or use EnterPlanMode for complex features, refactors, or multi-file changes',
   },
   {
     id: 'use-exploration',
@@ -129,6 +150,8 @@ const rules: Rule[] = [
     suggestion: 'Use the Explore subagent to efficiently search the codebase',
     reasoning: 'Codebase exploration would help answer your question',
     priority: 'medium',
+    explanation: 'The Explore agent is optimized for codebase searches—it\'s faster and more thorough than manual grep/find. It understands code structure and can trace dependencies, find usages, and map architecture.',
+    example: '"Where is error handling done?" → Explore agent finds patterns across files',
   },
   {
     id: 'step-back-and-plan',
@@ -138,6 +161,8 @@ const rules: Rule[] = [
     suggestion: 'Multiple attempts failed - consider stepping back to reassess the approach',
     reasoning: 'Repeated failures suggest a different strategy may be needed',
     priority: 'high',
+    explanation: 'When the same approach fails repeatedly, it\'s a signal that assumptions are wrong. Continuing to retry wastes tokens and time. Step back, re-read the error messages, check documentation, or try a completely different approach.',
+    example: 'Ask: "What am I assuming that might be wrong?" or "Is there a simpler way?"',
   },
   {
     id: 'context-management',
@@ -147,6 +172,8 @@ const rules: Rule[] = [
     suggestion: 'Consider using /compact or starting a new session to manage context',
     reasoning: 'Long conversation may benefit from context optimization',
     priority: 'low',
+    explanation: 'Long conversations accumulate context that may no longer be relevant, potentially causing confusion or slower responses. /compact summarizes the conversation to preserve important context while freeing up token budget.',
+    example: '/compact - creates a summary and continues with fresh context',
   },
 
   // Security rules
@@ -165,6 +192,8 @@ const rules: Rule[] = [
     suggestion: 'Remember to use environment variables for sensitive values',
     reasoning: 'Secrets should never be hardcoded in source files',
     priority: 'high',
+    explanation: 'Hardcoded secrets get committed to git, shared in code reviews, and exposed in error logs. Once a secret is in git history, it\'s there forever (even after deletion). Environment variables keep secrets out of code and allow different values per environment.',
+    example: 'const apiKey = process.env.API_KEY; // In .env: API_KEY=sk-xxx (add .env to .gitignore)',
   },
 
   // INFO - Educational tips for the user (smart triggers, not message-count based)
@@ -269,45 +298,65 @@ const rules: Rule[] = [
     suggestion: '⚠️  POTENTIAL SECRET DETECTED - Review before committing!',
     reasoning: 'Code appears to contain hardcoded credentials or API keys',
     priority: 'high',
+    explanation: 'Secrets in code are a critical security vulnerability. They get stored in git history permanently, can be extracted by anyone with repo access, and often end up on GitHub where bots scan for them within seconds. Rotate any exposed secret immediately.',
   },
   {
-    id: 'dangerous-git-command',
+    id: 'dangerous-operation-intent',
     category: 'security',
     patterns: [],
     level: 'critical',
     condition: (ctx) => {
-      if (ctx.toolInfo?.name !== 'Bash') return false;
-      const cmd = String(ctx.toolInfo?.input?.command || '').toLowerCase();
-      const dangerousPatterns = [
-        'git push --force',
-        'git push -f',
-        'git reset --hard',
-        'git clean -fd',
-        'rm -rf /',
-        'rm -rf ~',
-        'rm -rf .',
-      ];
-      return dangerousPatterns.some(pattern => cmd.includes(pattern));
+      // Check both bash commands AND user prompts for destructive intent
+      const textsToCheck: Array<{ text: string; context?: { isCommand?: boolean } }> = [];
+
+      // Check bash command if present
+      if (ctx.toolInfo?.name === 'Bash') {
+        const cmd = String(ctx.toolInfo?.input?.command || '');
+        textsToCheck.push({ text: cmd, context: { isCommand: true } });
+      }
+
+      // Check user prompt for intent
+      if (ctx.currentPrompt) {
+        textsToCheck.push({ text: ctx.currentPrompt });
+      }
+
+      // Use fuzzy intent matching for destructive operations
+      const match = matchIntentMultiple(textsToCheck);
+      return match !== null && match.type === 'destructive-operation' && match.confidence >= 0.8;
     },
     suggestion: '⚠️  DANGEROUS COMMAND - This could cause data loss!',
     reasoning: 'Destructive command detected that cannot be easily undone',
     priority: 'high',
+    explanation: 'Force push overwrites remote history—if others have pulled, their work becomes orphaned. Hard reset discards uncommitted changes permanently. These commands have legitimate uses but require careful consideration of who else is affected.',
   },
   {
-    id: 'committing-env-file',
+    id: 'committing-secrets-intent',
     category: 'security',
     patterns: [],
     level: 'critical',
     condition: (ctx) => {
-      if (ctx.toolInfo?.name !== 'Bash') return false;
-      const cmd = String(ctx.toolInfo?.input?.command || '');
-      const isGitAdd = cmd.includes('git add');
-      const hasEnvFile = /\.env(?:\.local|\.prod|\.dev)?(?:\s|$|")/.test(cmd);
-      return isGitAdd && hasEnvFile;
+      // Check both bash commands AND user prompts for intent to commit secrets
+      const textsToCheck: Array<{ text: string; context?: { isCommand?: boolean; hasGitContext?: boolean } }> = [];
+
+      // Check bash command if present
+      if (ctx.toolInfo?.name === 'Bash') {
+        const cmd = String(ctx.toolInfo?.input?.command || '');
+        textsToCheck.push({ text: cmd, context: { isCommand: true, hasGitContext: true } });
+      }
+
+      // Check user prompt for intent
+      if (ctx.currentPrompt) {
+        textsToCheck.push({ text: ctx.currentPrompt, context: { hasGitContext: ctx.hasUncommittedWork } });
+      }
+
+      // Use fuzzy intent matching
+      const match = matchIntentMultiple(textsToCheck);
+      return match !== null && match.type === 'committing-secrets' && match.confidence >= 0.7;
     },
-    suggestion: '⚠️  ADDING .env FILE TO GIT - This likely contains secrets!',
-    reasoning: 'Environment files typically contain sensitive configuration',
+    suggestion: '⚠️  ATTEMPTING TO COMMIT SENSITIVE FILES - This likely contains secrets!',
+    reasoning: 'Detected intent to add sensitive files (like .env, credentials, keys) to version control',
     priority: 'high',
+    explanation: 'Sensitive files like .env, credentials.json, and private keys should never be committed to git. Once in history, secrets are difficult to fully remove and may be exposed. Use .gitignore and environment variables instead.',
   },
 
   // ============================================
@@ -504,6 +553,8 @@ export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
           source: 'rule',
           level: rule.level || 'warning',  // Default to warning if not specified
           ruleId: rule.id,  // Include rule ID for cooldown tracking
+          explanation: rule.explanation,  // Training mode deep explanation
+          example: rule.example,  // Training mode example
         });
       }
     } catch {

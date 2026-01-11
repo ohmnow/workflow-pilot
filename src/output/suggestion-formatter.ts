@@ -14,12 +14,18 @@ interface FormatterConfig {
   verbosity: 'concise' | 'detailed' | 'adaptive';
   maxSuggestions: number;
   includeReasoning: boolean;
+  /** Training mode: include deep explanations and examples */
+  trainingMode?: {
+    explainSuggestions: boolean;
+    showExamples: boolean;
+  };
 }
 
 const defaultConfig: FormatterConfig = {
   verbosity: 'adaptive',
   maxSuggestions: 2,
   includeReasoning: true,
+  trainingMode: undefined,  // Not in training mode by default
 };
 
 /**
@@ -51,7 +57,7 @@ export function formatSuggestion(
   if (verbosity === 'concise') {
     return formatConcise(limited);
   } else {
-    return formatDetailed(limited, cfg.includeReasoning, context);
+    return formatDetailed(limited, cfg.includeReasoning, context, cfg.trainingMode);
   }
 }
 
@@ -92,6 +98,7 @@ function determineVerbosity(
 
 /**
  * Format suggestions concisely (one-liners)
+ * Note: This is for Claude's context, not terminal display
  */
 function formatConcise(suggestions: Suggestion[]): string {
   const lines = suggestions.map((s) => {
@@ -105,11 +112,13 @@ function formatConcise(suggestions: Suggestion[]): string {
 /**
  * Format suggestions with details using senior engineer persona
  * This injects rich context for the running Claude to reason about
+ * In training mode, includes deep explanations and examples
  */
 function formatDetailed(
   suggestions: Suggestion[],
   includeReasoning: boolean,
-  context?: import('../analyzer/context-builder.js').AnalysisContext
+  context?: import('../analyzer/context-builder.js').AnalysisContext,
+  trainingMode?: { explainSuggestions: boolean; showExamples: boolean }
 ): string {
   // Group suggestions by theme for more coherent guidance
   const testing = suggestions.filter(s => s.type === 'testing');
@@ -143,39 +152,45 @@ function formatDetailed(
   parts.push('Based on the session state, consider these best practices:');
   parts.push('');
 
-  if (testing.length > 0) {
-    parts.push(`**Quality Assurance**: ${testing.map(s => s.suggestion).join('. ')}`);
-    if (includeReasoning && testing[0].reasoning) {
-      parts.push(`  → ${testing[0].reasoning}`);
-    }
-  }
+  // Helper to format a suggestion with optional training content
+  const formatSuggestionGroup = (label: string, items: Suggestion[]) => {
+    if (items.length === 0) return;
 
-  if (git.length > 0) {
-    parts.push(`**Version Control**: ${git.map(s => s.suggestion).join('. ')}`);
-    if (includeReasoning && git[0].reasoning) {
-      parts.push(`  → ${git[0].reasoning}`);
-    }
-  }
+    parts.push(`**${label}**: ${items.map(s => s.suggestion).join('. ')}`);
 
-  if (security.length > 0) {
-    parts.push(`**Security**: ${security.map(s => s.suggestion).join('. ')}`);
-    if (includeReasoning && security[0].reasoning) {
-      parts.push(`  → ${security[0].reasoning}`);
+    const first = items[0] as RuleSuggestion;
+    if (includeReasoning && first.reasoning) {
+      parts.push(`  → ${first.reasoning}`);
     }
-  }
 
-  if (claudeCode.length > 0) {
-    parts.push(`**Workflow Optimization**: ${claudeCode.map(s => s.suggestion).join('. ')}`);
-    if (includeReasoning && claudeCode[0].reasoning) {
-      parts.push(`  → ${claudeCode[0].reasoning}`);
+    // Training mode: add deep explanation
+    if (trainingMode?.explainSuggestions && first.explanation) {
+      parts.push(`  📚 Why this matters: ${first.explanation}`);
     }
-  }
+
+    // Training mode: add example
+    if (trainingMode?.showExamples && first.example) {
+      parts.push(`  💻 Example: ${first.example}`);
+    }
+  };
+
+  formatSuggestionGroup('Quality Assurance', testing);
+  formatSuggestionGroup('Version Control', git);
+  formatSuggestionGroup('Security', security);
+  formatSuggestionGroup('Workflow Optimization', claudeCode);
 
   if (other.length > 0) {
     for (const s of other) {
+      const ruleSuggestion = s as RuleSuggestion;
       parts.push(`**${getCategoryLabel(s.type)}**: ${s.suggestion}`);
       if (includeReasoning && s.reasoning) {
         parts.push(`  → ${s.reasoning}`);
+      }
+      if (trainingMode?.explainSuggestions && ruleSuggestion.explanation) {
+        parts.push(`  📚 Why this matters: ${ruleSuggestion.explanation}`);
+      }
+      if (trainingMode?.showExamples && ruleSuggestion.example) {
+        parts.push(`  💻 Example: ${ruleSuggestion.example}`);
       }
     }
   }

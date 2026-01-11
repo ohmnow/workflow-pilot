@@ -151,7 +151,7 @@ describe('Rule Engine', () => {
 
       const envAlert = suggestions.find(s => s.level === 'critical');
       expect(envAlert).toBeDefined();
-      expect(envAlert?.suggestion).toContain('.env');
+      expect(envAlert?.suggestion).toContain('SENSITIVE');
     });
   });
 

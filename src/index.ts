@@ -117,35 +117,20 @@ function showTrainingIntentPrompt(): void {
   const config = loadConfig();
   if (!config.training.askIntent) return;
 
-  const cyanBg = '\x1b[48;5;30m';
-  const whiteText = '\x1b[38;5;255m';
-  const reset = '\x1b[0m';
-
-  const boxWidth = 56;
-  const line = '─'.repeat(boxWidth);
+  const CYAN = '\x1b[36m';
+  const DIM = '\x1b[2m';
+  const RESET = '\x1b[0m';
+  const BORDER = `${CYAN}┃${RESET}`;
 
   console.error('');
-  console.error(`${cyanBg}${whiteText}╭${line}╮${reset}`);
-
-  const header = '🎓 Training Mode';
-  const headerPad = Math.floor((boxWidth - header.length) / 2);
-  console.error(`${cyanBg}${whiteText}│${' '.repeat(headerPad)}${header}${' '.repeat(boxWidth - headerPad - header.length)}│${reset}`);
-
-  console.error(`${cyanBg}${whiteText}├${line}┤${reset}`);
-
-  const messages = [
-    'What are you trying to accomplish today?',
-    '',
-    'Workflow Pilot will guide you through',
-    'Claude Code best practices as you work.',
-  ];
-
-  for (const msg of messages) {
-    const padding = boxWidth - msg.length - 2;
-    console.error(`${cyanBg}${whiteText}│ ${msg}${' '.repeat(Math.max(0, padding))}│${reset}`);
-  }
-
-  console.error(`${cyanBg}${whiteText}╰${line}╯${reset}`);
+  console.error(`${BORDER}`);
+  console.error(`${BORDER} ${CYAN}🎓 Training Mode${RESET}`);
+  console.error(`${BORDER}`);
+  console.error(`${BORDER}   What are you trying to accomplish today?`);
+  console.error(`${BORDER}`);
+  console.error(`${BORDER}   ${DIM}Workflow Pilot will guide you through${RESET}`);
+  console.error(`${BORDER}   ${DIM}Claude Code best practices as you work.${RESET}`);
+  console.error(`${BORDER}`);
   console.error('');
 }
 
@@ -248,97 +233,36 @@ async function main(): Promise<void> {
 
     const displayTime = new Date().toLocaleTimeString();
 
+    // ===========================================
+    // LEFT BORDER VISUAL STYLE
+    // All plugin output uses ┃ left border to distinguish from Claude Code native output
+    // ===========================================
+    const RESET = '\x1b[0m';
+    const RED = '\x1b[31m';
+    const YELLOW = '\x1b[33m';
+    const CYAN = '\x1b[36m';
+    const DIM = '\x1b[2m';
+    const BOLD = '\x1b[1m';
+
+    // Plugin identifier - consistent left border
+    const PLUGIN_BORDER = `${CYAN}┃${RESET}`;
+    const PLUGIN_HEADER = `${PLUGIN_BORDER} ${DIM}Workflow Pilot${RESET}`;
+
     // CRITICAL ALERTS: Show inline to user via stderr + exit code 1
     if (criticalAlerts.length > 0) {
-      // ANSI colors: Red theme for critical alerts
-      const redBg = '\x1b[48;5;196m';
-      const darkRedBg = '\x1b[48;5;52m';
-      const whiteText = '\x1b[38;5;255m';
-      const whiteBold = '\x1b[1;37m';
-      const reset = '\x1b[0m';
-      const dim = '\x1b[2m';
-
-      // Box width (adjust based on terminal, 60 chars is safe)
-      const boxWidth = 60;
-      const horizontalLine = '━'.repeat(boxWidth);
-      const emptyLine = ' '.repeat(boxWidth);
-
       console.error('');
-      console.error('');
+      console.error(`${PLUGIN_BORDER}`);
+      console.error(`${PLUGIN_BORDER} ${RED}${BOLD}🚨 CRITICAL ALERT${RESET}`);
+      console.error(`${PLUGIN_BORDER}`);
 
-      // Top border
-      console.error(`${redBg}${whiteText}┏${horizontalLine}┓${reset}`);
-
-      // Empty padding line
-      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
-
-      // Header
-      const header = '🚨 CRITICAL ALERT';
-      const headerPadding = Math.floor((boxWidth - header.length) / 2);
-      const headerLine = ' '.repeat(headerPadding) + header + ' '.repeat(boxWidth - headerPadding - header.length);
-      console.error(`${redBg}${whiteBold}┃${headerLine}┃${reset}`);
-
-      // Empty padding line
-      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
-
-      // Separator
-      console.error(`${redBg}${whiteText}┃${'─'.repeat(boxWidth)}┃${reset}`);
-
-      // Empty padding line
-      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
-
-      // Alert messages
       for (const alert of criticalAlerts) {
-        // Word wrap the suggestion to fit in box
-        const words = alert.suggestion.split(' ');
-        let currentLine = '';
-        const lines: string[] = [];
-
-        for (const word of words) {
-          if ((currentLine + ' ' + word).trim().length <= boxWidth - 4) {
-            currentLine = (currentLine + ' ' + word).trim();
-          } else {
-            if (currentLine) lines.push(currentLine);
-            currentLine = word;
-          }
-        }
-        if (currentLine) lines.push(currentLine);
-
-        for (const line of lines) {
-          const linePadding = boxWidth - line.length - 2;
-          console.error(`${redBg}${whiteText}┃  ${line}${' '.repeat(linePadding)}┃${reset}`);
-        }
-
+        console.error(`${PLUGIN_BORDER}   ${RED}→${RESET} ${alert.suggestion}`);
         if (alert.reasoning) {
-          // Empty line before reasoning
-          console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
-          const reasoningLines: string[] = [];
-          const reasoningWords = alert.reasoning.split(' ');
-          let reasoningLine = '';
-          for (const word of reasoningWords) {
-            if ((reasoningLine + ' ' + word).trim().length <= boxWidth - 6) {
-              reasoningLine = (reasoningLine + ' ' + word).trim();
-            } else {
-              if (reasoningLine) reasoningLines.push(reasoningLine);
-              reasoningLine = word;
-            }
-          }
-          if (reasoningLine) reasoningLines.push(reasoningLine);
-
-          for (const line of reasoningLines) {
-            const linePadding = boxWidth - line.length - 4;
-            console.error(`${darkRedBg}${whiteText}┃    ${line}${' '.repeat(linePadding)}┃${reset}`);
-          }
+          console.error(`${PLUGIN_BORDER}     ${DIM}${alert.reasoning}${RESET}`);
         }
       }
 
-      // Empty padding line
-      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
-
-      // Bottom border
-      console.error(`${redBg}${whiteText}┗${horizontalLine}┛${reset}`);
-
-      console.error('');
+      console.error(`${PLUGIN_BORDER}`);
       console.error('');
 
       // Exit with code 1 so stderr shows to user
@@ -346,104 +270,48 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    // INFO TIPS: Educational content for the user (subtle blue theme)
+    // INFO TIPS: Educational content for the user (subtle, same border)
     if (infoTips.length > 0) {
-      const blueBg = '\x1b[48;5;24m';   // Dark blue background
-      const lightText = '\x1b[38;5;153m'; // Light blue text
-      const reset = '\x1b[0m';
-
-      const boxWidth = 60;
-      const thinLine = '─'.repeat(boxWidth);
-
       console.error('');
-      console.error(`${blueBg}${lightText}╭${thinLine}╮${reset}`);
-
-      // Header
-      const header = '📚 Did You Know?';
-      const headerPadding = Math.floor((boxWidth - header.length) / 2);
-      const headerLine = ' '.repeat(headerPadding) + header + ' '.repeat(boxWidth - headerPadding - header.length);
-      console.error(`${blueBg}${lightText}│${headerLine}│${reset}`);
-
-      console.error(`${blueBg}${lightText}├${thinLine}┤${reset}`);
+      console.error(`${PLUGIN_BORDER}`);
+      console.error(`${PLUGIN_BORDER} ${CYAN}💡 Tip${RESET}`);
 
       // Show tips (limit to 1 to keep it subtle)
       for (const tip of infoTips.slice(0, 1)) {
-        const words = tip.suggestion.split(' ');
-        let currentLine = '';
-        const lines: string[] = [];
-
-        for (const word of words) {
-          if ((currentLine + ' ' + word).trim().length <= boxWidth - 4) {
-            currentLine = (currentLine + ' ' + word).trim();
-          } else {
-            if (currentLine) lines.push(currentLine);
-            currentLine = word;
-          }
-        }
-        if (currentLine) lines.push(currentLine);
-
-        for (const line of lines) {
-          const padding = boxWidth - line.length - 2;
-          console.error(`${blueBg}${lightText}│ ${line}${' '.repeat(Math.max(0, padding))}│${reset}`);
-        }
+        console.error(`${PLUGIN_BORDER}   ${DIM}${tip.suggestion}${RESET}`);
       }
 
-      console.error(`${blueBg}${lightText}╰${thinLine}╯${reset}`);
+      console.error(`${PLUGIN_BORDER}`);
       console.error('');
     }
 
-    // WARNING SUGGESTIONS: Show to user AND inject context to Claude (gold theme)
+    // WARNING SUGGESTIONS: Show to user AND inject context to Claude
     if (warningSuggestions.length > 0) {
-      const goldBg = '\x1b[48;5;222m';
-      const darkText = '\x1b[38;5;236m';
-      const reset = '\x1b[0m';
-
-      const boxWidth = 56;
-      const thinLine = '─'.repeat(boxWidth);
-
-      // Visual output to stderr (user sees this)
       console.error('');
-      console.error(`${goldBg}${darkText}╭${thinLine}╮${reset}`);
-
-      // Header
-      const header = '💡 Workflow Pilot';
-      const headerPadding = Math.floor((boxWidth - header.length) / 2);
-      const headerLine = ' '.repeat(headerPadding) + header + ' '.repeat(boxWidth - headerPadding - header.length);
-      console.error(`${goldBg}${darkText}│${headerLine}│${reset}`);
-
-      console.error(`${goldBg}${darkText}├${thinLine}┤${reset}`);
+      console.error(`${PLUGIN_BORDER}`);
+      console.error(`${PLUGIN_BORDER} ${DIM}Workflow Pilot${RESET} ${DIM}${displayTime}${RESET}`);
 
       // Show each suggestion
       for (const suggestion of warningSuggestions.slice(0, 3)) {
-        const icon = suggestion.priority === 'high' ? '⚠️' : suggestion.priority === 'medium' ? '→' : '·';
-
-        // Word wrap
-        const text = `${icon} ${suggestion.suggestion}`;
-        const words = text.split(' ');
-        let currentLine = '';
-        const lines: string[] = [];
-
-        for (const word of words) {
-          if ((currentLine + ' ' + word).trim().length <= boxWidth - 4) {
-            currentLine = (currentLine + ' ' + word).trim();
-          } else {
-            if (currentLine) lines.push(currentLine);
-            currentLine = word;
-          }
-        }
-        if (currentLine) lines.push(currentLine);
-
-        for (const line of lines) {
-          const padding = boxWidth - line.length - 2;
-          console.error(`${goldBg}${darkText}│ ${line}${' '.repeat(Math.max(0, padding))}│${reset}`);
+        const icon = suggestion.priority === 'high' ? `${YELLOW}⚠${RESET}` : `${YELLOW}→${RESET}`;
+        console.error(`${PLUGIN_BORDER}   ${icon} ${suggestion.suggestion}`);
+        if (suggestion.reasoning) {
+          console.error(`${PLUGIN_BORDER}     ${DIM}${suggestion.reasoning}${RESET}`);
         }
       }
 
-      console.error(`${goldBg}${darkText}╰${thinLine}╯${reset}`);
+      console.error(`${PLUGIN_BORDER}`);
       console.error('');
 
       // Also inject context to Claude via stdout
-      const formattedSuggestion = formatSuggestion(warningSuggestions, context);
+      // Pass training mode config if enabled
+      const config = loadConfig();
+      const formattedSuggestion = formatSuggestion(warningSuggestions, context, {
+        trainingMode: isTrainingMode() ? {
+          explainSuggestions: config.training.explainSuggestions,
+          showExamples: config.training.showExamples,
+        } : undefined,
+      });
 
       const output: HookOutput = {
         hookSpecificOutput: {
