@@ -59,7 +59,7 @@ describe('Rule Engine', () => {
 
     it('suggests committing before switching tasks', () => {
       const context = createContext({
-        currentPrompt: 'now lets work on something else',
+        currentPrompt: 'let\'s work on a different task now',
         hasUncommittedWork: true,
       });
 

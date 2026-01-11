@@ -11,8 +11,9 @@ export interface RuleSuggestion {
   suggestion: string;
   reasoning?: string;
   priority: 'low' | 'medium' | 'high';
-  source: 'rule';
+  source: 'rule' | 'ai';
   level: 'critical' | 'warning' | 'info';  // Visual tier for user display
+  ruleId?: string;  // Rule ID for cooldown tracking
 }
 
 interface Rule {
@@ -70,11 +71,14 @@ const rules: Rule[] = [
     patterns: [],
     condition: (ctx) => {
       const prompt = ctx.currentPrompt?.toLowerCase() || '';
+      // More specific task-switching phrases to reduce false positives
       const isSwitchingTask =
-        prompt.includes('now') ||
-        prompt.includes('next') ||
         prompt.includes('switch to') ||
-        prompt.includes('let\'s work on');
+        prompt.includes('move on to') ||
+        prompt.includes('let\'s work on') ||
+        prompt.includes('different task') ||
+        prompt.includes('another feature') ||
+        prompt.includes('start working on');
       return isSwitchingTask && ctx.hasUncommittedWork;
     },
     suggestion: 'Commit current changes before switching tasks',
@@ -89,11 +93,18 @@ const rules: Rule[] = [
     patterns: [],
     condition: (ctx) => {
       const prompt = ctx.currentPrompt?.toLowerCase() || '';
+      // More specific completion phrases
       const featureComplete =
-        prompt.includes('done') ||
-        prompt.includes('finished') ||
-        prompt.includes('complete');
-      return featureComplete && ctx.hasUncommittedWork;
+        prompt.includes('feature is done') ||
+        prompt.includes('finished implementing') ||
+        prompt.includes('implementation complete') ||
+        prompt.includes('that should work') ||
+        (prompt.includes('looks good') && ctx.hasUncommittedWork);
+      // Also need significant code changes
+      const hasSignificantWork = ctx.recentToolUses.filter(
+        (t) => t.toolName === 'Edit' || t.toolName === 'Write'
+      ).length >= 3;
+      return featureComplete && hasSignificantWork;
     },
     suggestion: 'Consider a quick refactoring pass before committing',
     reasoning: 'Good time to clean up code after completing a feature',
@@ -156,19 +167,22 @@ const rules: Rule[] = [
     priority: 'high',
   },
 
-  // INFO - Educational tips for the user
+  // INFO - Educational tips for the user (smart triggers, not message-count based)
   {
     id: 'info-test-practice',
     category: 'testing',
     patterns: ['code-without-tests'],
     level: 'info',
     condition: (ctx) => {
-      // Only show occasionally when code is written without tests
-      return ctx.patterns.some((p) => p.type === 'code-without-tests') &&
-             ctx.conversationLength % 20 === 0; // Every ~20 messages
+      // Trigger after 3+ code changes without tests (meaningful threshold)
+      const codeChanges = ctx.recentToolUses.filter(
+        (t) => t.toolName === 'Edit' || t.toolName === 'Write'
+      ).length;
+      const hasTestPattern = ctx.patterns.some((p) => p.type === 'code-without-tests');
+      return hasTestPattern && codeChanges >= 3;
     },
-    suggestion: '💡 Pro tip: Running tests after each code change catches bugs early and builds confidence in your changes.',
-    reasoning: 'Testing frequently is a hallmark of professional development',
+    suggestion: '💡 Pro tip: Running tests after code changes catches bugs early and builds confidence in your changes.',
+    reasoning: 'Multiple code changes made without test verification',
     priority: 'low',
   },
   {
@@ -177,27 +191,29 @@ const rules: Rule[] = [
     patterns: [],
     level: 'info',
     condition: (ctx) => {
-      // Educational when session gets long without commits
-      return ctx.hasUncommittedWork &&
-             ctx.conversationLength > 30 &&
-             ctx.conversationLength % 25 === 0;
+      // Trigger when there's significant uncommitted work (5+ file operations)
+      const fileOps = ctx.recentToolUses.filter(
+        (t) => t.toolName === 'Edit' || t.toolName === 'Write'
+      ).length;
+      return ctx.hasUncommittedWork && fileOps >= 5;
     },
     suggestion: '💡 Best practice: "Commit early, commit often" - Small, frequent commits make it easier to track changes and rollback if needed.',
-    reasoning: 'Professional developers typically commit every 15-30 minutes of work',
+    reasoning: 'Significant work accumulated without committing',
     priority: 'low',
   },
   {
     id: 'info-plan-mode',
     category: 'claude-code',
-    patterns: [],
+    patterns: ['large-task-no-plan'],
     level: 'info',
     condition: (ctx) => {
-      // Educational about plan mode for complex prompts
+      // Trigger for complex prompts early in conversation
       const promptLength = ctx.currentPrompt?.length || 0;
-      return promptLength > 200 && ctx.conversationLength < 10;
+      const hasLargeTaskPattern = ctx.patterns.some((p) => p.type === 'large-task-no-plan');
+      return (promptLength > 300 || hasLargeTaskPattern) && ctx.conversationLength < 8;
     },
-    suggestion: '💡 For complex features, try starting with Plan mode (/plan) to design the approach before coding. This often saves time.',
-    reasoning: 'Planning before coding reduces rework and improves outcomes',
+    suggestion: '💡 For complex features, try Plan mode to design the approach before coding. This often saves time and reduces rework.',
+    reasoning: 'Complex task detected early - planning helps',
     priority: 'low',
   },
   {
@@ -206,11 +222,25 @@ const rules: Rule[] = [
     patterns: ['needs-exploration'],
     level: 'info',
     condition: (ctx) => {
-      return ctx.patterns.some((p) => p.type === 'needs-exploration') &&
-             ctx.conversationLength < 15;
+      // Trigger when exploration is needed early in session
+      const needsExplore = ctx.patterns.some((p) => p.type === 'needs-exploration');
+      return needsExplore && ctx.conversationLength < 10;
     },
-    suggestion: '💡 Claude Code has specialized subagents for exploration. When searching code, it will use an Explore agent that efficiently searches the codebase.',
-    reasoning: 'Understanding Claude Code features helps you work more effectively',
+    suggestion: '💡 Claude Code has specialized Explore agents for codebase searches. They efficiently find files and understand code structure.',
+    reasoning: 'Codebase exploration detected - highlighting helpful feature',
+    priority: 'low',
+  },
+  {
+    id: 'info-step-back',
+    category: 'claude-code',
+    patterns: ['multiple-failures'],
+    level: 'info',
+    condition: (ctx) => {
+      // Trigger after multiple failures detected
+      return ctx.patterns.some((p) => p.type === 'multiple-failures');
+    },
+    suggestion: '💡 When stuck, try describing the problem differently or break it into smaller steps. Sometimes a fresh perspective helps.',
+    reasoning: 'Multiple attempts unsuccessful - offering alternative approach',
     priority: 'low',
   },
 
@@ -297,6 +327,7 @@ export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
           priority: rule.priority,
           source: 'rule',
           level: rule.level || 'warning',  // Default to warning if not specified
+          ruleId: rule.id,  // Include rule ID for cooldown tracking
         });
       }
     } catch {

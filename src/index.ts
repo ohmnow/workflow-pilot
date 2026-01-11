@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Claude Code Workflow Pilot - Hook Entry Point
- * Version: 0.2.0
+ * Version: 0.3.0
  *
  * This is the main entry point for the plugin's hooks.
  * It receives JSON from stdin containing:
@@ -12,14 +12,21 @@
  * - tool_input: Tool input parameters (for PostToolUse)
  * - tool_output: Tool output (for PostToolUse)
  * - hook_event_name: The hook event type
+ *
+ * Modes:
+ * - minimal: Safety only (critical alerts)
+ * - training: Learning assistant with explanations
+ * - guidance: "Claude guiding Claude" with senior dev oversight
  */
 
 import { parseTranscript } from './analyzer/transcript-parser.js';
 import { buildContext } from './analyzer/context-builder.js';
 import { analyzeWithAI } from './analyzer/ai-analyzer.js';
-import { evaluateRules } from './rules/index.js';
+import { evaluateRules, RuleSuggestion } from './rules/index.js';
 import { formatSuggestion } from './output/suggestion-formatter.js';
 import { writeStatusFile } from './output/status-writer.js';
+import { loadConfig, isTierEnabled, isCategoryEnabled, getMode, isTrainingMode } from './config/loader.js';
+import { canTrigger, recordTrigger } from './state/cooldown.js';
 
 interface HookInput {
   session_id: string;
@@ -36,6 +43,110 @@ interface HookOutput {
     hookEventName: string;
     additionalContext?: string;
   };
+}
+
+/**
+ * Map rule categories to config category names
+ */
+function mapCategory(ruleCategory: string): 'testing' | 'git' | 'security' | 'claudeCode' | 'refactoring' {
+  const mapping: Record<string, 'testing' | 'git' | 'security' | 'claudeCode' | 'refactoring'> = {
+    'testing': 'testing',
+    'git': 'git',
+    'security': 'security',
+    'claude-code': 'claudeCode',
+    'refactoring': 'refactoring',
+  };
+  return mapping[ruleCategory] || 'claudeCode';
+}
+
+/**
+ * Filter suggestions based on config settings and cooldowns
+ */
+function filterSuggestions(suggestions: RuleSuggestion[]): RuleSuggestion[] {
+  const mode = getMode();
+
+  return suggestions.filter((suggestion) => {
+    // Check tier enablement
+    if (!isTierEnabled(suggestion.level)) {
+      return false;
+    }
+
+    // Check category enablement
+    const category = mapCategory(suggestion.type);
+    if (!isCategoryEnabled(category)) {
+      return false;
+    }
+
+    // Critical alerts bypass cooldowns
+    if (suggestion.level === 'critical') {
+      return true;
+    }
+
+    // In minimal mode, only critical alerts pass
+    if (mode === 'minimal') {
+      return false;
+    }
+
+    // Check cooldown using rule ID
+    const ruleId = suggestion.ruleId || `${suggestion.source}-${suggestion.type}`;
+    if (!canTrigger(ruleId)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Record that filtered suggestions were shown
+ */
+function recordShownSuggestions(suggestions: RuleSuggestion[]): void {
+  for (const suggestion of suggestions) {
+    // Don't record cooldown for critical alerts
+    if (suggestion.level === 'critical') continue;
+
+    const ruleId = suggestion.ruleId || `${suggestion.source}-${suggestion.type}`;
+    recordTrigger(ruleId);
+  }
+}
+
+/**
+ * Show training mode intent capture prompt
+ */
+function showTrainingIntentPrompt(): void {
+  const config = loadConfig();
+  if (!config.training.askIntent) return;
+
+  const cyanBg = '\x1b[48;5;30m';
+  const whiteText = '\x1b[38;5;255m';
+  const reset = '\x1b[0m';
+
+  const boxWidth = 56;
+  const line = '─'.repeat(boxWidth);
+
+  console.error('');
+  console.error(`${cyanBg}${whiteText}╭${line}╮${reset}`);
+
+  const header = '🎓 Training Mode';
+  const headerPad = Math.floor((boxWidth - header.length) / 2);
+  console.error(`${cyanBg}${whiteText}│${' '.repeat(headerPad)}${header}${' '.repeat(boxWidth - headerPad - header.length)}│${reset}`);
+
+  console.error(`${cyanBg}${whiteText}├${line}┤${reset}`);
+
+  const messages = [
+    'What are you trying to accomplish today?',
+    '',
+    'Workflow Pilot will guide you through',
+    'Claude Code best practices as you work.',
+  ];
+
+  for (const msg of messages) {
+    const padding = boxWidth - msg.length - 2;
+    console.error(`${cyanBg}${whiteText}│ ${msg}${' '.repeat(Math.max(0, padding))}│${reset}`);
+  }
+
+  console.error(`${cyanBg}${whiteText}╰${line}╯${reset}`);
+  console.error('');
 }
 
 async function main(): Promise<void> {
@@ -85,26 +196,55 @@ async function main(): Promise<void> {
       console.error('[WP Debug] Recent tool uses:', context.recentToolUses.length);
     }
 
+    // Load configuration
+    const config = loadConfig();
+    const mode = getMode();
+
+    if (DEBUG) {
+      console.error('[WP Debug] Mode:', mode);
+      console.error('[WP Debug] Config:', JSON.stringify(config, null, 2));
+    }
+
+    // Training mode: Show intent prompt at start of conversation
+    if (isTrainingMode() &&
+        input.hook_event_name === 'UserPromptSubmit' &&
+        context.conversationLength <= 3) {
+      showTrainingIntentPrompt();
+    }
+
     // Get suggestions from rule engine and AI
     const ruleSuggestions = evaluateRules(context);
     if (DEBUG) {
       console.error('[WP Debug] Rule suggestions:', ruleSuggestions.length);
     }
-    const aiSuggestions = await analyzeWithAI(context);
 
-    // Combine and format suggestions
+    // Only call AI if enabled in config
+    const aiSuggestions = config.ai.enabled ? await analyzeWithAI(context) : [];
+
+    // Combine all suggestions
     const allSuggestions = [...ruleSuggestions, ...aiSuggestions];
+
     if (DEBUG) {
-      console.error('[WP Debug] Total suggestions:', allSuggestions.length);
+      console.error('[WP Debug] Total suggestions before filter:', allSuggestions.length);
+    }
+
+    // Filter suggestions based on config and cooldowns
+    const filteredSuggestions = filterSuggestions(allSuggestions);
+
+    if (DEBUG) {
+      console.error('[WP Debug] Suggestions after filter:', filteredSuggestions.length);
     }
 
     // Write status file for status line integration
-    writeStatusFile(context, allSuggestions, input.session_id);
+    writeStatusFile(context, filteredSuggestions, input.session_id);
 
-    // Separate suggestions by level
-    const criticalAlerts = allSuggestions.filter(s => s.level === 'critical');
-    const warningSuggestions = allSuggestions.filter(s => s.level === 'warning');
-    const infoTips = allSuggestions.filter(s => s.level === 'info');
+    // Separate filtered suggestions by level
+    const criticalAlerts = filteredSuggestions.filter(s => s.level === 'critical');
+    const warningSuggestions = filteredSuggestions.filter(s => s.level === 'warning');
+    const infoTips = filteredSuggestions.filter(s => s.level === 'info');
+
+    // Record that we showed these suggestions (for cooldown tracking)
+    recordShownSuggestions(filteredSuggestions);
 
     const displayTime = new Date().toLocaleTimeString();
 

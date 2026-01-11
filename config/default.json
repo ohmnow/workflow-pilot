@@ -1,37 +1,44 @@
 {
-  "rules": {
-    "testing": {
-      "enabled": true,
-      "strictness": "medium"
-    },
-    "git": {
-      "enabled": true,
-      "commitReminder": "5m"
-    },
-    "refactoring": {
-      "enabled": true
-    },
-    "security": {
-      "enabled": true,
-      "strictness": "high"
-    },
-    "shipping": {
-      "enabled": true
-    },
-    "claudeCode": {
-      "enabled": true
+  "mode": "guidance",
+
+  "tiers": {
+    "critical": { "enabled": true },
+    "warning": { "enabled": true },
+    "info": { "enabled": true }
+  },
+
+  "categories": {
+    "testing": true,
+    "git": true,
+    "security": true,
+    "claudeCode": true,
+    "refactoring": true
+  },
+
+  "frequency": {
+    "defaultCooldownMinutes": 10,
+    "infoCooldownMinutes": 30,
+    "perRuleCooldowns": {
+      "commit-reminder": 15,
+      "test-after-code": 10
     }
   },
+
   "ai": {
     "enabled": true,
     "model": "claude-sonnet-4-20250514",
-    "fallbackToRules": true,
-    "maxContextMessages": 20
+    "fallbackToRules": true
   },
-  "verbosity": "adaptive",
+
+  "training": {
+    "askIntent": true,
+    "explainSuggestions": true,
+    "showExamples": true
+  },
+
   "hooks": {
     "userPromptSubmit": true,
-    "postToolUse": true,
-    "stop": false
+    "preToolUse": true,
+    "postToolUse": true
   }
 }
