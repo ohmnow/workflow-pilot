@@ -39,6 +39,8 @@ export interface WorkflowStatus {
 
   // Short status for status line display
   shortStatus: string;
+  // Detailed status with full suggestion text
+  detailedStatus: string;
 }
 
 export function writeStatusFile(
@@ -55,18 +57,35 @@ export function writeStatusFile(
     const categories = [...new Set(suggestions.map(s => s.type))];
     const highPriority = suggestions.find(s => s.priority === 'high');
 
-    // Build short status for status line
+    // Build short status for status line - show actual suggestions
     let shortStatus = '';
+    let detailedStatus = '';
+
     if (suggestions.length === 0) {
-      shortStatus = '✓';
-    } else if (highPriority) {
-      shortStatus = `⚠ ${suggestions.length}`;
+      shortStatus = '✓ All good';
+      detailedStatus = '';
     } else {
-      shortStatus = `💡${suggestions.length}`;
+      // Get concise suggestion text (truncated for status line)
+      const topSuggestions = suggestions.slice(0, 2).map(s => {
+        // Shorten common suggestions for status line
+        const text = s.suggestion
+          .replace('Consider running tests to verify your changes', 'Run tests')
+          .replace('Consider committing your progress to save your work', 'Commit changes')
+          .replace('Consider using /compact or starting a new session to manage context', '/compact')
+          .replace('Consider using Plan mode to design your approach first', 'Use Plan mode')
+          .replace('Use the Explore subagent to efficiently search the codebase', 'Use Explore')
+          .replace('Commit current changes before switching tasks', 'Commit first')
+          .replace('Run tests before committing to catch issues early', 'Test before commit');
+        return text.length > 20 ? text.slice(0, 18) + '…' : text;
+      });
+
+      const icon = highPriority ? '⚠️' : '💡';
+      shortStatus = `${icon} ${topSuggestions.join(' | ')}`;
+      detailedStatus = suggestions.map(s => s.suggestion).join(' • ');
     }
 
     // Add uncommitted indicator
-    if (uncommittedChanges) {
+    if (uncommittedChanges && !shortStatus.includes('Commit')) {
       shortStatus += ' 📝';
     }
 
@@ -89,6 +108,7 @@ export function writeStatusFile(
         startedAt: null, // TODO: track session start
       },
       shortStatus,
+      detailedStatus,
     };
 
     fs.writeFileSync(STATUS_FILE, JSON.stringify(status, null, 2));
