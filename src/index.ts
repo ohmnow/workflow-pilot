@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * Claude Code Workflow Pilot - Hook Entry Point
+ * Version: 0.1.0
  *
  * This is the main entry point for the plugin's hooks.
  * It receives JSON from stdin containing:
@@ -42,8 +43,17 @@ async function main(): Promise<void> {
     const inputData = await readStdin();
     const input: HookInput = JSON.parse(inputData);
 
+    // Debug mode - output to stderr so it doesn't interfere with hook output
+    const DEBUG = process.env.WORKFLOW_PILOT_DEBUG === '1';
+    if (DEBUG) {
+      console.error('[WP Debug] Input:', JSON.stringify(input, null, 2));
+    }
+
     // Parse the transcript to get conversation history
     const transcript = await parseTranscript(input.transcript_path);
+    if (DEBUG) {
+      console.error('[WP Debug] Transcript messages:', transcript.messages.length);
+    }
 
     // Build context for analysis
     const context = buildContext({
@@ -59,12 +69,24 @@ async function main(): Promise<void> {
         : undefined,
     });
 
+    if (DEBUG) {
+      console.error('[WP Debug] Context patterns:', context.patterns);
+      console.error('[WP Debug] Has uncommitted work:', context.hasUncommittedWork);
+      console.error('[WP Debug] Recent tool uses:', context.recentToolUses.length);
+    }
+
     // Get suggestions from rule engine and AI
     const ruleSuggestions = evaluateRules(context);
+    if (DEBUG) {
+      console.error('[WP Debug] Rule suggestions:', ruleSuggestions.length);
+    }
     const aiSuggestions = await analyzeWithAI(context);
 
     // Combine and format suggestions
     const allSuggestions = [...ruleSuggestions, ...aiSuggestions];
+    if (DEBUG) {
+      console.error('[WP Debug] Total suggestions:', allSuggestions.length);
+    }
 
     if (allSuggestions.length > 0) {
       const formattedSuggestion = formatSuggestion(allSuggestions, context);
