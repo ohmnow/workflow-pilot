@@ -110,9 +110,12 @@ export function formatBox(lines: string[], options: BoxOptions = {}): string[] {
   // Build the box
   const output: string[] = [];
 
-  // Top border
+  // Border uses golden color for the line characters (no background fill)
+  const borderFg = '\x1b[38;2;202;175;94m'; // Golden foreground for border chars
+
+  // Top border - rounded corners with golden line color, no background
   output.push(
-    `${bg}${fg}${BOX.topLeft}${BOX.horizontal.repeat(innerWidth)}${BOX.topRight}${reset}`
+    `${borderFg}${BOX.topLeft}${BOX.horizontal.repeat(innerWidth)}${BOX.topRight}${reset}`
   );
 
   // Title line (if provided)
@@ -120,27 +123,28 @@ export function formatBox(lines: string[], options: BoxOptions = {}): string[] {
     const icon = getTypeIcon(type);
     const titleLine = `${icon} ${title}`;
     const paddedTitle = padToWidth(titleLine, innerWidth - padding);
+    // Golden border chars │, content area with golden background
     output.push(
-      `${bg}${fg}${BOX.vertical}${' '.repeat(padding)}${paddedTitle}${BOX.vertical}${reset}`
+      `${borderFg}${BOX.vertical}${reset}${bg}${fg}${' '.repeat(padding)}${paddedTitle}${reset}${borderFg}${BOX.vertical}${reset}`
     );
     // Empty line after title
     output.push(
-      `${bg}${fg}${BOX.vertical}${' '.repeat(innerWidth)}${BOX.vertical}${reset}`
+      `${borderFg}${BOX.vertical}${reset}${bg}${fg}${' '.repeat(innerWidth)}${reset}${borderFg}${BOX.vertical}${reset}`
     );
   }
 
   // Content lines
   for (const line of contentLines) {
-    // Preserve any existing ANSI formatting in the line, but wrap with our bg
+    // Golden border chars │, content with golden background
     const paddedLine = padToWidth(' '.repeat(padding) + line, innerWidth);
     output.push(
-      `${bg}${fg}${BOX.vertical}${paddedLine}${BOX.vertical}${reset}`
+      `${borderFg}${BOX.vertical}${reset}${bg}${fg}${paddedLine}${reset}${borderFg}${BOX.vertical}${reset}`
     );
   }
 
-  // Bottom border
+  // Bottom border - rounded corners with golden line color
   output.push(
-    `${bg}${fg}${BOX.bottomLeft}${BOX.horizontal.repeat(innerWidth)}${BOX.bottomRight}${reset}`
+    `${borderFg}${BOX.bottomLeft}${BOX.horizontal.repeat(innerWidth)}${BOX.bottomRight}${reset}`
   );
 
   return output;
