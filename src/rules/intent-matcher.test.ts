@@ -99,4 +99,47 @@ describe('Intent Matcher', () => {
       expect(result?.type).toBe('committing-secrets');
     });
   });
+
+  describe('commit message filtering (false positive prevention)', () => {
+    // Commands with -m messages mentioning .env should NOT trigger
+    const shouldNotMatchWithMessage = [
+      'git commit -m "Fix .env handling"',
+      'git commit -m "Update .env documentation"',
+      "git commit -m 'Add .env to gitignore'",
+      'git commit -m "Handle credentials properly"',
+      'git commit -m "Fix api key rotation"',
+      'git commit -m "Update secrets management"',
+      'git commit -am "Fix .env parsing"',
+    ];
+
+    it.each(shouldNotMatchWithMessage)(
+      'should NOT trigger on commit message: "%s"',
+      (command) => {
+        const result = matchIntent(command, { isCommand: true });
+        // Should not match committing-secrets (message content should be ignored)
+        if (result?.type === 'committing-secrets') {
+          expect(result.confidence).toBeLessThan(0.7);
+        }
+      }
+    );
+
+    // These SHOULD still trigger (actual files being added/committed)
+    const shouldStillMatch = [
+      'git add .env',
+      'git add .env.local',
+      'git commit .env -m "add env"',  // File before -m
+      'git stage credentials.json',
+      'git add config.json && git commit -m "update"',
+    ];
+
+    it.each(shouldStillMatch)(
+      'should STILL trigger on actual file: "%s"',
+      (command) => {
+        const result = matchIntent(command, { isCommand: true });
+        expect(result).not.toBeNull();
+        expect(result?.type).toBe('committing-secrets');
+        expect(result?.confidence).toBeGreaterThanOrEqual(0.7);
+      }
+    );
+  });
 });

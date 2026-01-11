@@ -137,6 +137,38 @@ function normalize(text: string): string {
 }
 
 /**
+ * Extract the relevant part of a git command for security checking
+ * - For `git commit -m "message"`, ignore the message content
+ * - For `git add file`, check the file
+ * - Returns the command with commit messages stripped
+ */
+function extractGitCommandArgs(command: string): string {
+  const normalized = normalize(command);
+
+  // If it's a git commit with -m (including combined flags like -am, -sm, etc.)
+  // Match: git commit -m, -am, -sm, --message, etc.
+  const hasMessageFlag = /-m\s|--message\s|-[a-z]*m[a-z]*\s/.test(normalized);
+
+  if (normalized.includes('git commit') && hasMessageFlag) {
+    // Remove everything after -m flag (the message)
+    // Handle both quoted and unquoted messages
+    return normalized
+      .replace(/-m\s*"[^"]*"/g, '')       // -m "message"
+      .replace(/-m\s*'[^']*'/g, '')       // -m 'message'
+      .replace(/-m\s*\$\([^)]*\)/g, '')   // -m $(heredoc)
+      .replace(/-[a-z]*m\s*"[^"]*"/g, '') // -am "message", -sm "message"
+      .replace(/-[a-z]*m\s*'[^']*'/g, '') // -am 'message'
+      .replace(/--message\s*"[^"]*"/g, '')// --message "message"
+      .replace(/--message\s*'[^']*'/g, '')// --message 'message'
+      .replace(/-m\s*[^\s-]+/g, '')       // -m message (unquoted, single word)
+      .replace(/-[a-z]*m\s*[^\s-]+/g, '') // -am message (unquoted)
+      .replace(/--message\s*[^\s-]+/g, ''); // --message msg (unquoted)
+  }
+
+  return normalized;
+}
+
+/**
  * Check if text contains a word/phrase (word boundary aware for short terms)
  */
 function containsWord(text: string, word: string): boolean {
@@ -186,6 +218,11 @@ export function matchIntent(text: string, context?: {
 }): IntentMatch | null {
   const normalizedText = normalize(text);
 
+  // For commands, extract just the relevant args (ignore commit messages)
+  const textForSecretCheck = context?.isCommand
+    ? extractGitCommandArgs(text)
+    : normalizedText;
+
   // 1. Check for destructive operations (these are action-only, no target needed)
   const destructiveAction = findMatchingWord(normalizedText, DESTRUCTIVE_ACTIONS);
   if (destructiveAction) {
@@ -199,8 +236,9 @@ export function matchIntent(text: string, context?: {
   }
 
   // 2. Check for committing secrets (action + sensitive target)
-  const gitAction = findMatchingWord(normalizedText, GIT_ACTION_WORDS);
-  const sensitiveTarget = findMatchingWord(normalizedText, SENSITIVE_TARGETS);
+  // Use textForSecretCheck which strips commit message content for commands
+  const gitAction = findMatchingWord(textForSecretCheck, GIT_ACTION_WORDS);
+  const sensitiveTarget = findMatchingWord(textForSecretCheck, SENSITIVE_TARGETS);
 
   if (gitAction && sensitiveTarget) {
     // High confidence if both are present
