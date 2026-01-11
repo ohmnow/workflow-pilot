@@ -15,10 +15,10 @@ const PLUGIN_DIR = path.resolve(__dirname, '..');
 const CLAUDE_SETTINGS_PATH = path.join(process.env.HOME, '.claude', 'settings.json');
 
 // Hook configuration to add
+// Note: UserPromptSubmit doesn't use matcher, PostToolUse does
 const HOOK_CONFIG = {
   UserPromptSubmit: [
     {
-      matcher: ".*",
       hooks: [
         {
           type: "command",

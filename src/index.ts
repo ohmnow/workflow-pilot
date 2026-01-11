@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Claude Code Workflow Pilot - Hook Entry Point
- * Version: 0.1.0
+ * Version: 0.2.0
  *
  * This is the main entry point for the plugin's hooks.
  * It receives JSON from stdin containing:
@@ -39,9 +39,18 @@ interface HookOutput {
 
 async function main(): Promise<void> {
   try {
+    // Log hook invocation to file for verification
+    const fs = await import('fs');
+    const logFile = '/tmp/workflow-pilot.log';
+    const timestamp = new Date().toISOString();
+    fs.appendFileSync(logFile, `${timestamp} - Hook invoked\n`);
+
     // Read JSON from stdin
     const inputData = await readStdin();
     const input: HookInput = JSON.parse(inputData);
+
+    // Log the event
+    fs.appendFileSync(logFile, `${timestamp} - Event: ${input.hook_event_name}\n`);
 
     // Debug mode - output to stderr so it doesn't interfere with hook output
     const DEBUG = process.env.WORKFLOW_PILOT_DEBUG === '1';
