@@ -1,8 +1,8 @@
 # Workflow Pilot - Next Session Guide
 
 **Last Updated:** 2026-01-11
-**Version:** 0.5.0
-**Status:** Production Ready (Training Mode)
+**Version:** 0.6.0
+**Status:** Production Ready
 
 ---
 
@@ -11,14 +11,14 @@
 ```bash
 cd "/Users/chris/cc-projects/claude code terminal plugin"
 npm run build
-npm test -- --run  # Should pass 57 tests
+npm test -- --run  # Should pass 88 tests
 ```
 
 ---
 
 ## Current State Summary
 
-The plugin is now a fully functional MVP with:
+The plugin is a fully functional MVP with all hooks working:
 
 ### Completed Features
 - **Three Operating Modes**: minimal, training, guidance
@@ -26,44 +26,38 @@ The plugin is now a fully functional MVP with:
 - **Configuration System**: JSON config with environment overrides
 - **Cooldown System**: Time-based throttling to prevent alert fatigue
 - **Smart Triggers**: Context-aware heuristics (not message counts)
-- **PreToolUse Hook**: Configured for blocking dangerous commands
+- **All Three Hooks Working**: UserPromptSubmit, PreToolUse, PostToolUse
+- **Proper Blocking**: Exit code 2 for blocking dangerous commands
+- **Intent Matcher**: Fuzzy matching that ignores commit message content
 - **25 Rules**: Testing, git, security, Claude Code, refactoring, type-safety, error-handling, documentation, production, code-quality
 - **AI Integration**: Claude API with fallback to rules-only
+- **Installer**: `node scripts/install.js` with full test coverage
 
 ### Architecture
 ```
 src/
-├── index.ts           # Hook entry point (v0.3.0)
+├── index.ts           # Hook entry point
 ├── config/
 │   ├── schema.ts      # TypeScript interfaces
 │   └── loader.ts      # Config loading
 ├── state/
 │   └── cooldown.ts    # Cooldown tracking
 ├── analyzer/          # Context analysis
-├── rules/             # Rule definitions
+├── rules/
+│   ├── index.ts       # Rule definitions
+│   └── intent-matcher.ts  # Fuzzy security matching
 └── output/            # Formatting
+
+scripts/
+├── install.js         # Installer (testable)
+└── install.test.js    # 19 installer tests
 ```
 
 ---
 
 ## What to Work On Next
 
-### Priority 1: Verify PreToolUse in Fresh Terminal
-
-**Why:** PreToolUse hook was added but this session started before the hook was configured. Need fresh terminal to test.
-
-**Test:**
-```bash
-# In a NEW terminal:
-git push --force origin test  # Should show red CRITICAL ALERT and block
-git add .env                   # Should show red alert
-```
-
-**Files:** `src/index.ts:261` (critical alert handling), `src/rules/index.ts:274` (dangerous-git-command rule)
-
----
-
-### Priority 2: User-Specific Config
+### Priority 1: User-Specific Config
 
 **Current:** Config is global or project-level
 **Desired:** Per-project customization with rule presets
@@ -72,6 +66,14 @@ git add .env                   # Should show red alert
 - Detect project type (React, Node, Python)
 - Apply relevant rule presets
 - Allow `.workflow-pilot.json` in project root
+
+---
+
+### Priority 2: Smart Test Reminder Filtering
+
+**Issue:** Plugin suggests "run tests" even for config-only changes (.gitignore, .md files)
+
+**Fix:** Skip test reminders when only non-code files changed
 
 ---
 
@@ -91,13 +93,14 @@ git add .env                   # Should show red alert
 
 ## Key Files Quick Reference
 
-| File | Purpose | Lines |
+| File | Purpose | Tests |
 |------|---------|-------|
-| `src/index.ts` | Hook entry, visual output | ~400 |
-| `src/rules/index.ts` | Rule definitions | ~360 |
-| `src/config/schema.ts` | Config types | ~180 |
-| `src/config/loader.ts` | Config loading | ~200 |
-| `src/state/cooldown.ts` | Throttling | ~170 |
+| `src/index.ts` | Hook entry, visual output | - |
+| `src/rules/index.ts` | Rule definitions | 25 |
+| `src/rules/intent-matcher.ts` | Fuzzy security matching | 44 |
+| `scripts/install.js` | Installer | 19 |
+| `src/config/loader.ts` | Config loading | - |
+| `src/state/cooldown.ts` | Throttling | - |
 
 ---
 
@@ -115,9 +118,10 @@ ANTHROPIC_API_KEY=sk-ant-...    # For AI analysis
 ## Testing Commands
 
 ```bash
-npm test -- --run              # Run all tests
+npm test -- --run              # Run all 88 tests
 npm test -- --watch            # Watch mode
 npm run build                  # Compile TypeScript
+node scripts/install.js        # Install/update hooks
 tail -20 /tmp/workflow-pilot.log  # Check hook activity
 cat /tmp/workflow-pilot-state.json  # Check cooldown state
 ```
@@ -127,28 +131,43 @@ cat /tmp/workflow-pilot-state.json  # Check cooldown state
 ## Recent Commits
 
 ```
+c75051c Add .playwright-mcp/ to gitignore
+851a7ed Fix false positive on commit messages mentioning sensitive files
+b019d59 Add PreToolUse hook and fix blocking exit code
+1cc424d Add tests for install.js and refactor for testability
+c80c439 Update NEXT-SESSION.md for v0.5.0
 325fdb1 Add training mode with deep explanations and examples
-6122ee5 Add 8 new workflow rules with comprehensive tests
-dd0a127 Update documentation and add next session guide
-abb83f0 Add configuration system with three operating modes
-f72843e Add progress tracking for session continuity
 ```
+
+---
+
+## Session Summary (2026-01-11)
+
+### What Was Done
+1. **Install.js Tests**: Added 19 tests, refactored for dependency injection
+2. **PreToolUse Hook**: Added to installer (was missing from settings)
+3. **Exit Code Fix**: Changed from 1 to 2 for proper "block" signal
+4. **False Positive Fix**: Intent matcher now ignores `-m "message"` content
+5. **Gitignore**: Added `.playwright-mcp/` for Playwright screenshots
+
+### Verified Working
+- `git push --force origin main` → Blocked with CRITICAL ALERT
+- `git add .env` → Blocked with CRITICAL ALERT
+- `git commit -m "Fix .env handling"` → No longer triggers false positive
 
 ---
 
 ## Notes for Next Instance
 
-1. **Training mode complete** - Set `WORKFLOW_PILOT_MODE=training` for educational explanations with each suggestion
+1. **88 tests passing** - 25 rules + 44 intent matcher + 19 installer
 
-2. **57 tests passing** - 25 rule tests + 32 intent matcher tests
+2. **All hooks working** - UserPromptSubmit, PreToolUse, PostToolUse all configured
 
-3. **Intent matcher added** - New fuzzy matching for detecting user intent (committing secrets, etc.)
+3. **Intent matcher is smart** - Ignores commit message content, only checks actual file args
 
-4. **PreToolUse needs fresh terminal** - The blocking logic is implemented but needs testing
+4. **User vision:** Wants plugin to eventually work from PRDs/specs as autonomous senior dev
 
-5. **Cooldowns are working** - Check `/tmp/workflow-pilot-state.json` to see trigger history
-
-6. **User vision:** Wants plugin to eventually work from PRDs/specs as autonomous senior dev
+5. **Potential refinement:** Skip test reminders for config-only files
 
 ---
 
@@ -158,3 +177,4 @@ f72843e Add progress tracking for session continuity
 - **Config:** `config/default.json`
 - **Hooks:** `hooks/hooks.json`
 - **Main logic:** `src/index.ts`
+- **Installer:** `scripts/install.js`
