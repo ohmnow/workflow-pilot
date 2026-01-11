@@ -27,6 +27,12 @@ import { formatSuggestion } from './output/suggestion-formatter.js';
 import { writeStatusFile } from './output/status-writer.js';
 import { loadConfig, isTierEnabled, isCategoryEnabled, getMode, isTrainingMode } from './config/loader.js';
 import { canTrigger, recordTrigger } from './state/cooldown.js';
+import { isOrchestratorMode } from './orchestrator/index.js';
+import {
+  handleUserPromptSubmit as handleOrchestratorPrompt,
+  handlePreToolUse as handleOrchestratorPreTool,
+  handlePostToolUse as handleOrchestratorPostTool,
+} from './orchestrator/hooks.js';
 
 interface HookInput {
   session_id: string;
@@ -197,6 +203,66 @@ async function main(): Promise<void> {
       showTrainingIntentPrompt();
     }
 
+    // Orchestrator mode: Handle phase-aware guidance
+    let orchestratorContext: string | undefined;
+    if (isOrchestratorMode()) {
+      if (input.hook_event_name === 'UserPromptSubmit' && input.prompt) {
+        const orchResult = handleOrchestratorPrompt(input.prompt);
+
+        // Show user message if any
+        if (orchResult.userMessage) {
+          const CYAN = '\x1b[36m';
+          const DIM = '\x1b[2m';
+          const RESET = '\x1b[0m';
+          const BORDER = `${CYAN}┃${RESET}`;
+
+          console.error('');
+          console.error(`${BORDER}`);
+          console.error(`${BORDER} ${CYAN}🎯 Orchestrator${RESET}${orchResult.statusSummary ? ` ${DIM}${orchResult.statusSummary}${RESET}` : ''}`);
+          console.error(`${BORDER}`);
+          console.error(`${BORDER}   ${DIM}${orchResult.userMessage}${RESET}`);
+          console.error(`${BORDER}`);
+          console.error('');
+        }
+
+        orchestratorContext = orchResult.contextInjection;
+      }
+
+      if (input.hook_event_name === 'PreToolUse' && input.tool_name && input.tool_input) {
+        const orchResult = handleOrchestratorPreTool(input.tool_name, input.tool_input);
+
+        if (orchResult.block) {
+          const RED = '\x1b[31m';
+          const RESET = '\x1b[0m';
+          const BOLD = '\x1b[1m';
+          const CYAN = '\x1b[36m';
+          const BORDER = `${CYAN}┃${RESET}`;
+
+          console.error('');
+          console.error(`${BORDER}`);
+          console.error(`${BORDER} ${RED}${BOLD}🚫 BLOCKED${RESET}`);
+          console.error(`${BORDER}`);
+          console.error(`${BORDER}   ${orchResult.blockReason}`);
+          console.error(`${BORDER}`);
+          console.error('');
+
+          process.exit(2);
+        }
+      }
+
+      if (input.hook_event_name === 'PostToolUse' && input.tool_name && input.tool_input) {
+        const orchResult = handleOrchestratorPostTool(
+          input.tool_name,
+          input.tool_input,
+          input.tool_output || ''
+        );
+
+        if (orchResult.contextInjection) {
+          orchestratorContext = (orchestratorContext || '') + '\n' + orchResult.contextInjection;
+        }
+      }
+    }
+
     // Get suggestions from rule engine and AI
     const ruleSuggestions = evaluateRules(context);
     if (DEBUG) {
@@ -313,10 +379,26 @@ async function main(): Promise<void> {
         } : undefined,
       });
 
+      // Combine orchestrator context with suggestions if both exist
+      const combinedContext = orchestratorContext
+        ? `${orchestratorContext}\n\n${formattedSuggestion}`
+        : formattedSuggestion;
+
       const output: HookOutput = {
         hookSpecificOutput: {
           hookEventName: input.hook_event_name,
-          additionalContext: formattedSuggestion,
+          additionalContext: combinedContext,
+        },
+      };
+
+      console.log(JSON.stringify(output));
+    }
+    // ORCHESTRATOR MODE: Inject context even if no rule suggestions
+    else if (orchestratorContext) {
+      const output: HookOutput = {
+        hookSpecificOutput: {
+          hookEventName: input.hook_event_name,
+          additionalContext: orchestratorContext,
         },
       };
 
