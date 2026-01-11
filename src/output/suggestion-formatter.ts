@@ -51,7 +51,7 @@ export function formatSuggestion(
   if (verbosity === 'concise') {
     return formatConcise(limited);
   } else {
-    return formatDetailed(limited, cfg.includeReasoning);
+    return formatDetailed(limited, cfg.includeReasoning, context);
   }
 }
 
@@ -78,11 +78,15 @@ function determineVerbosity(
     (p) => p.type === 'multiple-failures'
   );
 
-  if (hasHighPriority || hasMultipleFailures) {
+  // Also use detailed for long conversations or when there are multiple suggestions
+  const isLongConversation = context.conversationLength > 50;
+  const hasMultipleSuggestions = suggestions.length >= 2;
+
+  if (hasHighPriority || hasMultipleFailures || isLongConversation || hasMultipleSuggestions) {
     return 'detailed';
   }
 
-  // Use concise for routine suggestions
+  // Use concise for single routine suggestions
   return 'concise';
 }
 
@@ -100,10 +104,12 @@ function formatConcise(suggestions: Suggestion[]): string {
 
 /**
  * Format suggestions with details using senior engineer persona
+ * This injects rich context for the running Claude to reason about
  */
 function formatDetailed(
   suggestions: Suggestion[],
-  includeReasoning: boolean
+  includeReasoning: boolean,
+  context?: import('../analyzer/context-builder.js').AnalysisContext
 ): string {
   // Group suggestions by theme for more coherent guidance
   const testing = suggestions.filter(s => s.type === 'testing');
@@ -116,9 +122,25 @@ function formatDetailed(
 
   const parts: string[] = [];
 
-  // Senior Engineer Voice - contextual guidance
-  parts.push('<senior-engineer-guidance>');
-  parts.push('Before proceeding, consider these best practices:');
+  // Senior Engineer Voice - contextual guidance with session awareness
+  parts.push('<workflow-pilot-analysis>');
+
+  // Include session metrics for Claude to reason about
+  if (context) {
+    parts.push('<session-state>');
+    parts.push(`Messages in conversation: ${context.conversationLength}`);
+    parts.push(`Recent tool uses: ${context.recentToolUses.length}`);
+    parts.push(`Uncommitted work: ${context.hasUncommittedWork ? 'yes' : 'no'}`);
+    parts.push(`Last test run: ${context.lastTestRun ? 'recent' : 'none detected'}`);
+    if (context.patterns.length > 0) {
+      parts.push(`Detected patterns: ${context.patterns.map(p => p.type).join(', ')}`);
+    }
+    parts.push('</session-state>');
+    parts.push('');
+  }
+
+  parts.push('<guidance>');
+  parts.push('Based on the session state, consider these best practices:');
   parts.push('');
 
   if (testing.length > 0) {
@@ -158,9 +180,10 @@ function formatDetailed(
     }
   }
 
+  parts.push('</guidance>');
   parts.push('');
-  parts.push('Incorporate these considerations naturally into your response.');
-  parts.push('</senior-engineer-guidance>');
+  parts.push('<instruction>Incorporate these considerations naturally. If suggesting code changes, mention testing. If the session is long, consider suggesting /compact.</instruction>');
+  parts.push('</workflow-pilot-analysis>');
 
   return parts.join('\n');
 }

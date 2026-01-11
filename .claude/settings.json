@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/chris/cc-projects/claude\\ code\\ terminal\\ plugin/test-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
