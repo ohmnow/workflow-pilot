@@ -152,7 +152,7 @@ function validateConfig(config: unknown): config is Partial<WorkflowPilotConfig>
 
   // Validate mode if present
   if (c.mode !== undefined) {
-    if (!['minimal', 'training', 'guidance'].includes(c.mode as string)) {
+    if (!['minimal', 'training', 'guidance', 'orchestrator'].includes(c.mode as string)) {
       console.error(`[Workflow Pilot] Invalid mode: ${c.mode}. Using default.`);
       return false;
     }
