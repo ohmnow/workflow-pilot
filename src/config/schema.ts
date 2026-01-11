@@ -4,7 +4,7 @@
  * Defines the structure for user-configurable settings.
  */
 
-export type OperatingMode = 'minimal' | 'training' | 'guidance';
+export type OperatingMode = 'minimal' | 'training' | 'guidance' | 'orchestrator';
 
 export interface WorkflowPilotConfig {
   /**
@@ -12,6 +12,7 @@ export interface WorkflowPilotConfig {
    * - minimal: Safety only (critical alerts), no context injection
    * - training: Learning assistant with explanations and guidance
    * - guidance: "Claude guiding Claude" with senior dev oversight
+   * - orchestrator: 10X pair programmer guiding from idea to production
    */
   mode: OperatingMode;
 
@@ -77,6 +78,22 @@ export interface WorkflowPilotConfig {
     preToolUse: boolean;
     postToolUse: boolean;
   };
+
+  /**
+   * Orchestrator mode settings (10X pair programmer)
+   */
+  orchestrator: {
+    /** Path to feature list file */
+    featureListPath: string;
+    /** Path to session progress file */
+    progressPath: string;
+    /** Enable parallel subagent work */
+    parallelEnabled: boolean;
+    /** Max concurrent subagents */
+    maxParallelAgents: number;
+    /** Auto-run production checks before deploy */
+    autoProductionChecks: boolean;
+  };
 }
 
 /**
@@ -120,6 +137,14 @@ export const DEFAULT_CONFIG: WorkflowPilotConfig = {
     userPromptSubmit: true,
     preToolUse: true,
     postToolUse: true,
+  },
+
+  orchestrator: {
+    featureListPath: 'feature_list.json',
+    progressPath: 'claude-progress.txt',
+    parallelEnabled: false,
+    maxParallelAgents: 2,
+    autoProductionChecks: true,
   },
 };
 
@@ -170,6 +195,23 @@ export const MODE_PRESETS: Record<OperatingMode, Partial<WorkflowPilotConfig>> =
     training: {
       askIntent: false,
       explainSuggestions: false,
+      showExamples: false,
+    },
+  },
+
+  orchestrator: {
+    tiers: {
+      critical: { enabled: true },
+      warning: { enabled: true },
+      info: { enabled: true },
+    },
+    frequency: {
+      defaultCooldownMinutes: 5,   // More active guidance
+      infoCooldownMinutes: 10,
+    },
+    training: {
+      askIntent: true,             // Ask what they're building
+      explainSuggestions: true,    // Explain the process
       showExamples: false,
     },
   },
