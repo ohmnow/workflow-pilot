@@ -29,3 +29,4 @@ coverage/
 # Playwright MCP screenshots
 .playwright-mcp/
 .workflow-pilot.json
+.workflow-pilot-orchestrator.json

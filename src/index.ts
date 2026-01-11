@@ -24,6 +24,7 @@ import { buildContext } from './analyzer/context-builder.js';
 import { analyzeWithAI } from './analyzer/ai-analyzer.js';
 import { evaluateRules, RuleSuggestion } from './rules/index.js';
 import { formatSuggestion } from './output/suggestion-formatter.js';
+import { printBox, formatBox } from './output/box-formatter.js';
 import { writeStatusFile } from './output/status-writer.js';
 import { loadConfig, isTierEnabled, isCategoryEnabled, getMode, isTrainingMode } from './config/loader.js';
 import { canTrigger, recordTrigger } from './state/cooldown.js';
@@ -123,21 +124,15 @@ function showTrainingIntentPrompt(): void {
   const config = loadConfig();
   if (!config.training.askIntent) return;
 
-  const CYAN = '\x1b[36m';
-  const DIM = '\x1b[2m';
-  const RESET = '\x1b[0m';
-  const BORDER = `${CYAN}┃${RESET}`;
-
-  console.error('');
-  console.error(`${BORDER}`);
-  console.error(`${BORDER} ${CYAN}🎓 Training Mode${RESET}`);
-  console.error(`${BORDER}`);
-  console.error(`${BORDER}   What are you trying to accomplish today?`);
-  console.error(`${BORDER}`);
-  console.error(`${BORDER}   ${DIM}Workflow Pilot will guide you through${RESET}`);
-  console.error(`${BORDER}   ${DIM}Claude Code best practices as you work.${RESET}`);
-  console.error(`${BORDER}`);
-  console.error('');
+  printBox([
+    'What are you trying to accomplish today?',
+    '',
+    'Workflow Pilot will guide you through',
+    'Claude Code best practices as you work.',
+  ], {
+    title: 'Training Mode',
+    type: 'tip',
+  });
 }
 
 async function main(): Promise<void> {
@@ -211,18 +206,13 @@ async function main(): Promise<void> {
 
         // Show user message if any
         if (orchResult.userMessage) {
-          const CYAN = '\x1b[36m';
-          const DIM = '\x1b[2m';
-          const RESET = '\x1b[0m';
-          const BORDER = `${CYAN}┃${RESET}`;
-
-          console.error('');
-          console.error(`${BORDER}`);
-          console.error(`${BORDER} ${CYAN}🎯 Orchestrator${RESET}${orchResult.statusSummary ? ` ${DIM}${orchResult.statusSummary}${RESET}` : ''}`);
-          console.error(`${BORDER}`);
-          console.error(`${BORDER}   ${DIM}${orchResult.userMessage}${RESET}`);
-          console.error(`${BORDER}`);
-          console.error('');
+          const title = orchResult.statusSummary
+            ? `Orchestrator - ${orchResult.statusSummary}`
+            : 'Orchestrator';
+          printBox([orchResult.userMessage], {
+            title,
+            type: 'info',
+          });
         }
 
         orchestratorContext = orchResult.contextInjection;
@@ -232,20 +222,10 @@ async function main(): Promise<void> {
         const orchResult = handleOrchestratorPreTool(input.tool_name, input.tool_input);
 
         if (orchResult.block) {
-          const RED = '\x1b[31m';
-          const RESET = '\x1b[0m';
-          const BOLD = '\x1b[1m';
-          const CYAN = '\x1b[36m';
-          const BORDER = `${CYAN}┃${RESET}`;
-
-          console.error('');
-          console.error(`${BORDER}`);
-          console.error(`${BORDER} ${RED}${BOLD}🚫 BLOCKED${RESET}`);
-          console.error(`${BORDER}`);
-          console.error(`${BORDER}   ${orchResult.blockReason}`);
-          console.error(`${BORDER}`);
-          console.error('');
-
+          printBox([orchResult.blockReason || 'Action blocked'], {
+            title: 'BLOCKED',
+            type: 'critical',
+          });
           process.exit(2);
         }
       }
@@ -300,74 +280,56 @@ async function main(): Promise<void> {
     const displayTime = new Date().toLocaleTimeString();
 
     // ===========================================
-    // LEFT BORDER VISUAL STYLE
-    // All plugin output uses ┃ left border to distinguish from Claude Code native output
+    // ROUNDED BOX VISUAL STYLE
+    // All plugin output uses rounded boxes with #caaf5e background
     // ===========================================
-    const RESET = '\x1b[0m';
-    const RED = '\x1b[31m';
-    const YELLOW = '\x1b[33m';
-    const CYAN = '\x1b[36m';
-    const DIM = '\x1b[2m';
-    const BOLD = '\x1b[1m';
 
-    // Plugin identifier - consistent left border
-    const PLUGIN_BORDER = `${CYAN}┃${RESET}`;
-    const PLUGIN_HEADER = `${PLUGIN_BORDER} ${DIM}Workflow Pilot${RESET}`;
-
-    // CRITICAL ALERTS: Show inline to user via stderr + exit code 1
+    // CRITICAL ALERTS: Show inline to user via stderr + exit code 2
     if (criticalAlerts.length > 0) {
-      console.error('');
-      console.error(`${PLUGIN_BORDER}`);
-      console.error(`${PLUGIN_BORDER} ${RED}${BOLD}🚨 CRITICAL ALERT${RESET}`);
-      console.error(`${PLUGIN_BORDER}`);
-
+      const alertLines: string[] = [];
       for (const alert of criticalAlerts) {
-        console.error(`${PLUGIN_BORDER}   ${RED}→${RESET} ${alert.suggestion}`);
+        alertLines.push(`→ ${alert.suggestion}`);
         if (alert.reasoning) {
-          console.error(`${PLUGIN_BORDER}     ${DIM}${alert.reasoning}${RESET}`);
+          alertLines.push(`  ${alert.reasoning}`);
         }
       }
-
-      console.error(`${PLUGIN_BORDER}`);
-      console.error('');
+      printBox(alertLines, {
+        title: 'CRITICAL ALERT',
+        type: 'critical',
+        minWidth: 50,
+      });
 
       // Exit with code 2 to signal "block" to Claude Code
       // This prevents the action from proceeding
       process.exit(2);
     }
 
-    // INFO TIPS: Educational content for the user (subtle, same border)
+    // INFO TIPS: Educational content for the user (subtle)
     if (infoTips.length > 0) {
-      console.error('');
-      console.error(`${PLUGIN_BORDER}`);
-      console.error(`${PLUGIN_BORDER} ${CYAN}💡 Tip${RESET}`);
-
       // Show tips (limit to 1 to keep it subtle)
-      for (const tip of infoTips.slice(0, 1)) {
-        console.error(`${PLUGIN_BORDER}   ${DIM}${tip.suggestion}${RESET}`);
-      }
-
-      console.error(`${PLUGIN_BORDER}`);
-      console.error('');
+      const tip = infoTips[0];
+      printBox([tip.suggestion], {
+        title: 'Tip',
+        type: 'tip',
+        minWidth: 35,
+      });
     }
 
     // WARNING SUGGESTIONS: Show to user AND inject context to Claude
     if (warningSuggestions.length > 0) {
-      console.error('');
-      console.error(`${PLUGIN_BORDER}`);
-      console.error(`${PLUGIN_BORDER} ${DIM}Workflow Pilot${RESET} ${DIM}${displayTime}${RESET}`);
-
-      // Show each suggestion
+      const suggestionLines: string[] = [];
       for (const suggestion of warningSuggestions.slice(0, 3)) {
-        const icon = suggestion.priority === 'high' ? `${YELLOW}⚠${RESET}` : `${YELLOW}→${RESET}`;
-        console.error(`${PLUGIN_BORDER}   ${icon} ${suggestion.suggestion}`);
+        const icon = suggestion.priority === 'high' ? '⚠' : '→';
+        suggestionLines.push(`${icon} ${suggestion.suggestion}`);
         if (suggestion.reasoning) {
-          console.error(`${PLUGIN_BORDER}     ${DIM}${suggestion.reasoning}${RESET}`);
+          suggestionLines.push(`  ${suggestion.reasoning}`);
         }
       }
-
-      console.error(`${PLUGIN_BORDER}`);
-      console.error('');
+      printBox(suggestionLines, {
+        title: `Workflow Pilot ${displayTime}`,
+        type: 'warning',
+        minWidth: 45,
+      });
 
       // Also inject context to Claude via stdout
       // Pass training mode config if enabled
