@@ -101,16 +101,33 @@ async function main(): Promise<void> {
     // Write status file for status line integration
     writeStatusFile(context, allSuggestions, input.session_id);
 
-    // Always output status to stderr for visibility
-    const displayTime = new Date().toLocaleTimeString();
-    if (allSuggestions.length > 0) {
-      const formattedSuggestion = formatSuggestion(allSuggestions, context);
+    // Separate critical alerts from normal suggestions
+    const criticalAlerts = allSuggestions.filter(s => 'critical' in s && s.critical);
+    const normalSuggestions = allSuggestions.filter(s => !('critical' in s && s.critical));
 
-      // Visible feedback to user via stderr
-      console.error(`\x1b[36m[Workflow Pilot ${displayTime}]\x1b[0m ${allSuggestions.length} suggestion(s):`);
-      for (const suggestion of allSuggestions) {
-        console.error(`  \x1b[33m→\x1b[0m ${suggestion.suggestion}`);
+    const displayTime = new Date().toLocaleTimeString();
+
+    // CRITICAL ALERTS: Show inline to user via stderr + exit code 1
+    if (criticalAlerts.length > 0) {
+      console.error('');
+      console.error('\x1b[41m\x1b[37m ⚠️  WORKFLOW PILOT ALERT \x1b[0m');
+      console.error('');
+      for (const alert of criticalAlerts) {
+        console.error(`\x1b[31m${alert.suggestion}\x1b[0m`);
+        if (alert.reasoning) {
+          console.error(`\x1b[90m   ${alert.reasoning}\x1b[0m`);
+        }
       }
+      console.error('');
+
+      // Exit with code 1 so stderr shows to user
+      // Note: This means context won't be injected to Claude for this turn
+      process.exit(1);
+    }
+
+    // NORMAL SUGGESTIONS: Inject context to Claude via stdout + exit code 0
+    if (normalSuggestions.length > 0) {
+      const formattedSuggestion = formatSuggestion(normalSuggestions, context);
 
       const output: HookOutput = {
         hookSpecificOutput: {
@@ -120,11 +137,9 @@ async function main(): Promise<void> {
       };
 
       console.log(JSON.stringify(output));
-    } else {
-      console.error(`\x1b[36m[Workflow Pilot ${displayTime}]\x1b[0m ✓ No suggestions`);
     }
 
-    // Exit successfully
+    // Exit successfully - context goes to Claude
     process.exit(0);
   } catch (error) {
     // Log error but don't fail the hook (allow Claude to continue)

@@ -99,26 +99,70 @@ function formatConcise(suggestions: Suggestion[]): string {
 }
 
 /**
- * Format suggestions with details
+ * Format suggestions with details using senior engineer persona
  */
 function formatDetailed(
   suggestions: Suggestion[],
   includeReasoning: boolean
 ): string {
-  const sections = suggestions.map((s) => {
-    const icon = getPriorityIcon(s.priority);
-    const category = getCategoryLabel(s.type);
+  // Group suggestions by theme for more coherent guidance
+  const testing = suggestions.filter(s => s.type === 'testing');
+  const git = suggestions.filter(s => s.type === 'git');
+  const security = suggestions.filter(s => s.type === 'security');
+  const claudeCode = suggestions.filter(s => s.type === 'claude-code');
+  const other = suggestions.filter(s =>
+    !['testing', 'git', 'security', 'claude-code'].includes(s.type)
+  );
 
-    let text = `${icon} **${category}**: ${s.suggestion}`;
+  const parts: string[] = [];
 
-    if (includeReasoning && s.reasoning) {
-      text += `\n   _${s.reasoning}_`;
+  // Senior Engineer Voice - contextual guidance
+  parts.push('<senior-engineer-guidance>');
+  parts.push('Before proceeding, consider these best practices:');
+  parts.push('');
+
+  if (testing.length > 0) {
+    parts.push(`**Quality Assurance**: ${testing.map(s => s.suggestion).join('. ')}`);
+    if (includeReasoning && testing[0].reasoning) {
+      parts.push(`  → ${testing[0].reasoning}`);
     }
+  }
 
-    return text;
-  });
+  if (git.length > 0) {
+    parts.push(`**Version Control**: ${git.map(s => s.suggestion).join('. ')}`);
+    if (includeReasoning && git[0].reasoning) {
+      parts.push(`  → ${git[0].reasoning}`);
+    }
+  }
 
-  return `[Workflow Pilot Suggestions]\n${sections.join('\n\n')}`;
+  if (security.length > 0) {
+    parts.push(`**Security**: ${security.map(s => s.suggestion).join('. ')}`);
+    if (includeReasoning && security[0].reasoning) {
+      parts.push(`  → ${security[0].reasoning}`);
+    }
+  }
+
+  if (claudeCode.length > 0) {
+    parts.push(`**Workflow Optimization**: ${claudeCode.map(s => s.suggestion).join('. ')}`);
+    if (includeReasoning && claudeCode[0].reasoning) {
+      parts.push(`  → ${claudeCode[0].reasoning}`);
+    }
+  }
+
+  if (other.length > 0) {
+    for (const s of other) {
+      parts.push(`**${getCategoryLabel(s.type)}**: ${s.suggestion}`);
+      if (includeReasoning && s.reasoning) {
+        parts.push(`  → ${s.reasoning}`);
+      }
+    }
+  }
+
+  parts.push('');
+  parts.push('Incorporate these considerations naturally into your response.');
+  parts.push('</senior-engineer-guidance>');
+
+  return parts.join('\n');
 }
 
 /**

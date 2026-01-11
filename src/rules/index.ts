@@ -12,6 +12,7 @@ export interface RuleSuggestion {
   reasoning?: string;
   priority: 'low' | 'medium' | 'high';
   source: 'rule';
+  critical?: boolean;  // If true, show inline to user (not just context injection)
 }
 
 interface Rule {
@@ -22,6 +23,7 @@ interface Rule {
   suggestion: string;
   reasoning: string;
   priority: 'low' | 'medium' | 'high';
+  critical?: boolean;  // Show inline to user immediately
 }
 
 // Define workflow rules
@@ -153,6 +155,72 @@ const rules: Rule[] = [
     reasoning: 'Secrets should never be hardcoded in source files',
     priority: 'high',
   },
+
+  // CRITICAL ALERTS - These show inline to user
+  {
+    id: 'hardcoded-secret-detected',
+    category: 'security',
+    patterns: [],
+    critical: true,
+    condition: (ctx) => {
+      // Check if writing/editing code with potential secrets
+      if (ctx.toolInfo?.name !== 'Edit' && ctx.toolInfo?.name !== 'Write') return false;
+      const content = JSON.stringify(ctx.toolInfo?.input || '').toLowerCase();
+      const secretPatterns = [
+        /sk[-_]live[-_]/i,           // Stripe live keys
+        /sk[-_]test[-_]/i,           // Stripe test keys
+        /api[-_]?key["']\s*[:=]\s*["'][a-z0-9]{20,}/i,  // Generic API keys
+        /password["']\s*[:=]\s*["'][^"']+["']/i,        // Hardcoded passwords
+        /secret["']\s*[:=]\s*["'][^"']+["']/i,          // Hardcoded secrets
+        /bearer\s+[a-z0-9]{20,}/i,   // Bearer tokens
+        /ghp_[a-zA-Z0-9]{36}/,       // GitHub personal access tokens
+        /xox[baprs]-[a-zA-Z0-9-]+/,  // Slack tokens
+      ];
+      return secretPatterns.some(pattern => pattern.test(content));
+    },
+    suggestion: '⚠️  POTENTIAL SECRET DETECTED - Review before committing!',
+    reasoning: 'Code appears to contain hardcoded credentials or API keys',
+    priority: 'high',
+  },
+  {
+    id: 'dangerous-git-command',
+    category: 'security',
+    patterns: [],
+    critical: true,
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Bash') return false;
+      const cmd = String(ctx.toolInfo?.input?.command || '').toLowerCase();
+      const dangerousPatterns = [
+        'git push --force',
+        'git push -f',
+        'git reset --hard',
+        'git clean -fd',
+        'rm -rf /',
+        'rm -rf ~',
+        'rm -rf .',
+      ];
+      return dangerousPatterns.some(pattern => cmd.includes(pattern));
+    },
+    suggestion: '⚠️  DANGEROUS COMMAND - This could cause data loss!',
+    reasoning: 'Destructive command detected that cannot be easily undone',
+    priority: 'high',
+  },
+  {
+    id: 'committing-env-file',
+    category: 'security',
+    patterns: [],
+    critical: true,
+    condition: (ctx) => {
+      if (ctx.toolInfo?.name !== 'Bash') return false;
+      const cmd = String(ctx.toolInfo?.input?.command || '');
+      const isGitAdd = cmd.includes('git add');
+      const hasEnvFile = /\.env(?:\.local|\.prod|\.dev)?(?:\s|$|")/.test(cmd);
+      return isGitAdd && hasEnvFile;
+    },
+    suggestion: '⚠️  ADDING .env FILE TO GIT - This likely contains secrets!',
+    reasoning: 'Environment files typically contain sensitive configuration',
+    priority: 'high',
+  },
 ];
 
 /**
@@ -170,6 +238,7 @@ export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
           reasoning: rule.reasoning,
           priority: rule.priority,
           source: 'rule',
+          critical: rule.critical,
         });
       }
     } catch {
