@@ -15,6 +15,7 @@ export interface AISuggestion {
   reasoning?: string;
   priority: 'low' | 'medium' | 'high';
   source: 'ai';
+  level: 'critical' | 'warning' | 'info';
 }
 
 // Analysis prompt template
@@ -94,7 +95,7 @@ export async function analyzeWithAI(context: AnalysisContext): Promise<AISuggest
       const textContent = response.content.find((block) => block.type === 'text');
       if (textContent && textContent.type === 'text') {
         const suggestions = parseAIResponse(textContent.text);
-        return suggestions.map((s) => ({ ...s, source: 'ai' as const }));
+        return suggestions.map((s) => ({ ...s, source: 'ai' as const, level: 'warning' as const }));
       }
     } catch (error) {
       // Fall through to CLI fallback
@@ -111,7 +112,7 @@ export async function analyzeWithAI(context: AnalysisContext): Promise<AISuggest
       const cliResponse = await analyzeWithCLI(prompt);
       if (cliResponse) {
         const suggestions = parseAIResponse(cliResponse);
-        return suggestions.map((s) => ({ ...s, source: 'ai' as const }));
+        return suggestions.map((s) => ({ ...s, source: 'ai' as const, level: 'warning' as const }));
       }
     } catch (error) {
       if (process.env.WORKFLOW_PILOT_DEBUG === '1') {

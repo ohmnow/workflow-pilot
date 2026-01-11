@@ -119,7 +119,7 @@ describe('Rule Engine', () => {
 
       const suggestions = evaluateRules(context);
 
-      const secretAlert = suggestions.find(s => s.critical === true);
+      const secretAlert = suggestions.find(s => s.level === 'critical');
       expect(secretAlert).toBeDefined();
       expect(secretAlert?.suggestion).toContain('SECRET');
     });
@@ -134,7 +134,7 @@ describe('Rule Engine', () => {
 
       const suggestions = evaluateRules(context);
 
-      const dangerAlert = suggestions.find(s => s.critical === true);
+      const dangerAlert = suggestions.find(s => s.level === 'critical');
       expect(dangerAlert).toBeDefined();
       expect(dangerAlert?.suggestion).toContain('DANGEROUS');
     });
@@ -149,7 +149,7 @@ describe('Rule Engine', () => {
 
       const suggestions = evaluateRules(context);
 
-      const envAlert = suggestions.find(s => s.critical === true);
+      const envAlert = suggestions.find(s => s.level === 'critical');
       expect(envAlert).toBeDefined();
       expect(envAlert?.suggestion).toContain('.env');
     });

@@ -12,7 +12,7 @@ export interface RuleSuggestion {
   reasoning?: string;
   priority: 'low' | 'medium' | 'high';
   source: 'rule';
-  critical?: boolean;  // If true, show inline to user (not just context injection)
+  level: 'critical' | 'warning' | 'info';  // Visual tier for user display
 }
 
 interface Rule {
@@ -23,7 +23,7 @@ interface Rule {
   suggestion: string;
   reasoning: string;
   priority: 'low' | 'medium' | 'high';
-  critical?: boolean;  // Show inline to user immediately
+  level?: 'critical' | 'warning' | 'info';  // critical=red, warning=gold, info=blue (default: warning)
 }
 
 // Define workflow rules
@@ -156,12 +156,70 @@ const rules: Rule[] = [
     priority: 'high',
   },
 
-  // CRITICAL ALERTS - These show inline to user
+  // INFO - Educational tips for the user
+  {
+    id: 'info-test-practice',
+    category: 'testing',
+    patterns: ['code-without-tests'],
+    level: 'info',
+    condition: (ctx) => {
+      // Only show occasionally when code is written without tests
+      return ctx.patterns.some((p) => p.type === 'code-without-tests') &&
+             ctx.conversationLength % 20 === 0; // Every ~20 messages
+    },
+    suggestion: '💡 Pro tip: Running tests after each code change catches bugs early and builds confidence in your changes.',
+    reasoning: 'Testing frequently is a hallmark of professional development',
+    priority: 'low',
+  },
+  {
+    id: 'info-commit-practice',
+    category: 'git',
+    patterns: [],
+    level: 'info',
+    condition: (ctx) => {
+      // Educational when session gets long without commits
+      return ctx.hasUncommittedWork &&
+             ctx.conversationLength > 30 &&
+             ctx.conversationLength % 25 === 0;
+    },
+    suggestion: '💡 Best practice: "Commit early, commit often" - Small, frequent commits make it easier to track changes and rollback if needed.',
+    reasoning: 'Professional developers typically commit every 15-30 minutes of work',
+    priority: 'low',
+  },
+  {
+    id: 'info-plan-mode',
+    category: 'claude-code',
+    patterns: [],
+    level: 'info',
+    condition: (ctx) => {
+      // Educational about plan mode for complex prompts
+      const promptLength = ctx.currentPrompt?.length || 0;
+      return promptLength > 200 && ctx.conversationLength < 10;
+    },
+    suggestion: '💡 For complex features, try starting with Plan mode (/plan) to design the approach before coding. This often saves time.',
+    reasoning: 'Planning before coding reduces rework and improves outcomes',
+    priority: 'low',
+  },
+  {
+    id: 'info-subagents',
+    category: 'claude-code',
+    patterns: ['needs-exploration'],
+    level: 'info',
+    condition: (ctx) => {
+      return ctx.patterns.some((p) => p.type === 'needs-exploration') &&
+             ctx.conversationLength < 15;
+    },
+    suggestion: '💡 Claude Code has specialized subagents for exploration. When searching code, it will use an Explore agent that efficiently searches the codebase.',
+    reasoning: 'Understanding Claude Code features helps you work more effectively',
+    priority: 'low',
+  },
+
+  // CRITICAL ALERTS - Red, blocks action, security issues
   {
     id: 'hardcoded-secret-detected',
     category: 'security',
     patterns: [],
-    critical: true,
+    level: 'critical',
     condition: (ctx) => {
       // Check if writing/editing code with potential secrets
       if (ctx.toolInfo?.name !== 'Edit' && ctx.toolInfo?.name !== 'Write') return false;
@@ -186,7 +244,7 @@ const rules: Rule[] = [
     id: 'dangerous-git-command',
     category: 'security',
     patterns: [],
-    critical: true,
+    level: 'critical',
     condition: (ctx) => {
       if (ctx.toolInfo?.name !== 'Bash') return false;
       const cmd = String(ctx.toolInfo?.input?.command || '').toLowerCase();
@@ -209,7 +267,7 @@ const rules: Rule[] = [
     id: 'committing-env-file',
     category: 'security',
     patterns: [],
-    critical: true,
+    level: 'critical',
     condition: (ctx) => {
       if (ctx.toolInfo?.name !== 'Bash') return false;
       const cmd = String(ctx.toolInfo?.input?.command || '');
@@ -238,7 +296,7 @@ export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
           reasoning: rule.reasoning,
           priority: rule.priority,
           source: 'rule',
-          critical: rule.critical,
+          level: rule.level || 'warning',  // Default to warning if not specified
         });
       }
     } catch {

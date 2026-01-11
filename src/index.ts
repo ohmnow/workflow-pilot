@@ -101,23 +101,104 @@ async function main(): Promise<void> {
     // Write status file for status line integration
     writeStatusFile(context, allSuggestions, input.session_id);
 
-    // Separate critical alerts from normal suggestions
-    const criticalAlerts = allSuggestions.filter(s => 'critical' in s && s.critical);
-    const normalSuggestions = allSuggestions.filter(s => !('critical' in s && s.critical));
+    // Separate suggestions by level
+    const criticalAlerts = allSuggestions.filter(s => s.level === 'critical');
+    const warningSuggestions = allSuggestions.filter(s => s.level === 'warning');
+    const infoTips = allSuggestions.filter(s => s.level === 'info');
 
     const displayTime = new Date().toLocaleTimeString();
 
     // CRITICAL ALERTS: Show inline to user via stderr + exit code 1
     if (criticalAlerts.length > 0) {
+      // ANSI colors: Red theme for critical alerts
+      const redBg = '\x1b[48;5;196m';
+      const darkRedBg = '\x1b[48;5;52m';
+      const whiteText = '\x1b[38;5;255m';
+      const whiteBold = '\x1b[1;37m';
+      const reset = '\x1b[0m';
+      const dim = '\x1b[2m';
+
+      // Box width (adjust based on terminal, 60 chars is safe)
+      const boxWidth = 60;
+      const horizontalLine = '━'.repeat(boxWidth);
+      const emptyLine = ' '.repeat(boxWidth);
+
       console.error('');
-      console.error('\x1b[41m\x1b[37m ⚠️  WORKFLOW PILOT ALERT \x1b[0m');
       console.error('');
+
+      // Top border
+      console.error(`${redBg}${whiteText}┏${horizontalLine}┓${reset}`);
+
+      // Empty padding line
+      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
+
+      // Header
+      const header = '🚨 CRITICAL ALERT';
+      const headerPadding = Math.floor((boxWidth - header.length) / 2);
+      const headerLine = ' '.repeat(headerPadding) + header + ' '.repeat(boxWidth - headerPadding - header.length);
+      console.error(`${redBg}${whiteBold}┃${headerLine}┃${reset}`);
+
+      // Empty padding line
+      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
+
+      // Separator
+      console.error(`${redBg}${whiteText}┃${'─'.repeat(boxWidth)}┃${reset}`);
+
+      // Empty padding line
+      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
+
+      // Alert messages
       for (const alert of criticalAlerts) {
-        console.error(`\x1b[31m${alert.suggestion}\x1b[0m`);
+        // Word wrap the suggestion to fit in box
+        const words = alert.suggestion.split(' ');
+        let currentLine = '';
+        const lines: string[] = [];
+
+        for (const word of words) {
+          if ((currentLine + ' ' + word).trim().length <= boxWidth - 4) {
+            currentLine = (currentLine + ' ' + word).trim();
+          } else {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        for (const line of lines) {
+          const linePadding = boxWidth - line.length - 2;
+          console.error(`${redBg}${whiteText}┃  ${line}${' '.repeat(linePadding)}┃${reset}`);
+        }
+
         if (alert.reasoning) {
-          console.error(`\x1b[90m   ${alert.reasoning}\x1b[0m`);
+          // Empty line before reasoning
+          console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
+          const reasoningLines: string[] = [];
+          const reasoningWords = alert.reasoning.split(' ');
+          let reasoningLine = '';
+          for (const word of reasoningWords) {
+            if ((reasoningLine + ' ' + word).trim().length <= boxWidth - 6) {
+              reasoningLine = (reasoningLine + ' ' + word).trim();
+            } else {
+              if (reasoningLine) reasoningLines.push(reasoningLine);
+              reasoningLine = word;
+            }
+          }
+          if (reasoningLine) reasoningLines.push(reasoningLine);
+
+          for (const line of reasoningLines) {
+            const linePadding = boxWidth - line.length - 4;
+            console.error(`${darkRedBg}${whiteText}┃    ${line}${' '.repeat(linePadding)}┃${reset}`);
+          }
         }
       }
+
+      // Empty padding line
+      console.error(`${redBg}${whiteText}┃${emptyLine}┃${reset}`);
+
+      // Bottom border
+      console.error(`${redBg}${whiteText}┗${horizontalLine}┛${reset}`);
+
+      console.error('');
       console.error('');
 
       // Exit with code 1 so stderr shows to user
@@ -125,9 +206,104 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    // NORMAL SUGGESTIONS: Inject context to Claude via stdout + exit code 0
-    if (normalSuggestions.length > 0) {
-      const formattedSuggestion = formatSuggestion(normalSuggestions, context);
+    // INFO TIPS: Educational content for the user (subtle blue theme)
+    if (infoTips.length > 0) {
+      const blueBg = '\x1b[48;5;24m';   // Dark blue background
+      const lightText = '\x1b[38;5;153m'; // Light blue text
+      const reset = '\x1b[0m';
+
+      const boxWidth = 60;
+      const thinLine = '─'.repeat(boxWidth);
+
+      console.error('');
+      console.error(`${blueBg}${lightText}╭${thinLine}╮${reset}`);
+
+      // Header
+      const header = '📚 Did You Know?';
+      const headerPadding = Math.floor((boxWidth - header.length) / 2);
+      const headerLine = ' '.repeat(headerPadding) + header + ' '.repeat(boxWidth - headerPadding - header.length);
+      console.error(`${blueBg}${lightText}│${headerLine}│${reset}`);
+
+      console.error(`${blueBg}${lightText}├${thinLine}┤${reset}`);
+
+      // Show tips (limit to 1 to keep it subtle)
+      for (const tip of infoTips.slice(0, 1)) {
+        const words = tip.suggestion.split(' ');
+        let currentLine = '';
+        const lines: string[] = [];
+
+        for (const word of words) {
+          if ((currentLine + ' ' + word).trim().length <= boxWidth - 4) {
+            currentLine = (currentLine + ' ' + word).trim();
+          } else {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        for (const line of lines) {
+          const padding = boxWidth - line.length - 2;
+          console.error(`${blueBg}${lightText}│ ${line}${' '.repeat(Math.max(0, padding))}│${reset}`);
+        }
+      }
+
+      console.error(`${blueBg}${lightText}╰${thinLine}╯${reset}`);
+      console.error('');
+    }
+
+    // WARNING SUGGESTIONS: Show to user AND inject context to Claude (gold theme)
+    if (warningSuggestions.length > 0) {
+      const goldBg = '\x1b[48;5;222m';
+      const darkText = '\x1b[38;5;236m';
+      const reset = '\x1b[0m';
+
+      const boxWidth = 56;
+      const thinLine = '─'.repeat(boxWidth);
+
+      // Visual output to stderr (user sees this)
+      console.error('');
+      console.error(`${goldBg}${darkText}╭${thinLine}╮${reset}`);
+
+      // Header
+      const header = '💡 Workflow Pilot';
+      const headerPadding = Math.floor((boxWidth - header.length) / 2);
+      const headerLine = ' '.repeat(headerPadding) + header + ' '.repeat(boxWidth - headerPadding - header.length);
+      console.error(`${goldBg}${darkText}│${headerLine}│${reset}`);
+
+      console.error(`${goldBg}${darkText}├${thinLine}┤${reset}`);
+
+      // Show each suggestion
+      for (const suggestion of warningSuggestions.slice(0, 3)) {
+        const icon = suggestion.priority === 'high' ? '⚠️' : suggestion.priority === 'medium' ? '→' : '·';
+
+        // Word wrap
+        const text = `${icon} ${suggestion.suggestion}`;
+        const words = text.split(' ');
+        let currentLine = '';
+        const lines: string[] = [];
+
+        for (const word of words) {
+          if ((currentLine + ' ' + word).trim().length <= boxWidth - 4) {
+            currentLine = (currentLine + ' ' + word).trim();
+          } else {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        for (const line of lines) {
+          const padding = boxWidth - line.length - 2;
+          console.error(`${goldBg}${darkText}│ ${line}${' '.repeat(Math.max(0, padding))}│${reset}`);
+        }
+      }
+
+      console.error(`${goldBg}${darkText}╰${thinLine}╯${reset}`);
+      console.error('');
+
+      // Also inject context to Claude via stdout
+      const formattedSuggestion = formatSuggestion(warningSuggestions, context);
 
       const output: HookOutput = {
         hookSpecificOutput: {
