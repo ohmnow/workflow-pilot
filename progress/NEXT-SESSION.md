@@ -1,8 +1,8 @@
 # Workflow Pilot - Next Session Guide
 
 **Last Updated:** 2026-01-11
-**Version:** 0.3.0
-**Status:** Production Ready (MVP)
+**Version:** 0.4.0
+**Status:** Production Ready (Expanded Rules)
 
 ---
 
@@ -11,7 +11,7 @@
 ```bash
 cd "/Users/chris/cc-projects/claude code terminal plugin"
 npm run build
-npm test -- --run  # Should pass 11 tests
+npm test -- --run  # Should pass 25 tests
 ```
 
 ---
@@ -27,7 +27,7 @@ The plugin is now a fully functional MVP with:
 - **Cooldown System**: Time-based throttling to prevent alert fatigue
 - **Smart Triggers**: Context-aware heuristics (not message counts)
 - **PreToolUse Hook**: Configured for blocking dangerous commands
-- **17 Rules**: Testing, git, security, Claude Code, refactoring
+- **25 Rules**: Testing, git, security, Claude Code, refactoring, type-safety, error-handling, documentation, production, code-quality
 - **AI Integration**: Claude API with fallback to rules-only
 
 ### Architecture
@@ -59,7 +59,7 @@ git push --force origin test  # Should show red CRITICAL ALERT and block
 git add .env                   # Should show red alert
 ```
 
-**Files:** `src/index.ts:261` (critical alert handling), `src/rules/index.ts:237` (dangerous-git-command rule)
+**Files:** `src/index.ts:261` (critical alert handling), `src/rules/index.ts:274` (dangerous-git-command rule)
 
 ---
 
@@ -80,20 +80,7 @@ git add .env                   # Should show red alert
 
 ---
 
-### Priority 3: Expand Rule Coverage
-
-**High Value Rules to Add:**
-1. **Type safety** - Suggest TypeScript for JS files
-2. **Error handling** - Detect missing try/catch
-3. **PR readiness** - Check before creating PR
-4. **Dependency updates** - Suggest npm audit
-5. **Documentation** - Suggest JSDoc for public APIs
-
-**Files:** `src/rules/index.ts`
-
----
-
-### Priority 4: User-Specific Config
+### Priority 3: User-Specific Config
 
 **Current:** Config is global or project-level
 **Desired:** Per-project customization with rule presets
@@ -105,7 +92,7 @@ git add .env                   # Should show red alert
 
 ---
 
-### Priority 5: Autonomous Senior Dev Mode
+### Priority 4: Autonomous Senior Dev Mode
 
 **Vision:** Plugin that can work from specs/PRDs to guide development
 
@@ -157,25 +144,28 @@ cat /tmp/workflow-pilot-state.json  # Check cooldown state
 ## Recent Commits
 
 ```
+6122ee5 Add 8 new workflow rules with comprehensive tests
+dd0a127 Update documentation and add next session guide
 abb83f0 Add configuration system with three operating modes
 f72843e Add progress tracking for session continuity
 f496cdd Add PreToolUse hook for blocking dangerous commands
-ece55c6 Add three-tier visual feedback system
 ```
 
 ---
 
 ## Notes for Next Instance
 
-1. **PreToolUse needs fresh terminal** - The blocking logic is implemented but needs testing
+1. **Rule expansion complete** - 25 rules now covering: testing, git, security, claude-code, refactoring, type-safety, error-handling, documentation, production, code-quality
 
-2. **Cooldowns are working** - Check `/tmp/workflow-pilot-state.json` to see trigger history
+2. **PreToolUse needs fresh terminal** - The blocking logic is implemented but needs testing
 
-3. **Config system is flexible** - Can override via env vars for quick testing
+3. **Cooldowns are working** - Check `/tmp/workflow-pilot-state.json` to see trigger history
 
-4. **Tests are comprehensive** - All 11 pass, covering rules and deduplication
+4. **Config system is flexible** - Can override via env vars for quick testing
 
-5. **User vision:** Wants plugin to eventually work from PRDs/specs as autonomous senior dev
+5. **Tests are comprehensive** - 25 tests pass, covering all rule categories
+
+6. **User vision:** Wants plugin to eventually work from PRDs/specs as autonomous senior dev
 
 ---
 
