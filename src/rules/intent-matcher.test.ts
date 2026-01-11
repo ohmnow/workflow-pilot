@@ -43,6 +43,11 @@ describe('Intent Matcher', () => {
       'read the credentials',          // Not committing
       'check the api key',             // Not committing
       'delete the .env file',          // Not git
+      'git add .env.example',          // Template file is safe
+      'git add .env.sample',           // Template file is safe
+      'git add .env.template',         // Template file is safe
+      'commit .env.example',           // Template file is safe
+      'git add config.example.json',   // Template file is safe
     ];
 
     it.each(shouldNotMatch)('should NOT detect: "%s"', (phrase) => {

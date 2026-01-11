@@ -74,6 +74,15 @@ const SENSITIVE_TARGETS = [
   'connection string',
 ];
 
+// Safe template file suffixes that should NOT be blocked
+const SAFE_TEMPLATE_SUFFIXES = [
+  '.example',
+  '.sample',
+  '.template',
+  '.dist',
+  '.default',
+];
+
 // Dangerous/destructive action words
 const DESTRUCTIVE_ACTIONS = [
   'force push',
@@ -205,6 +214,15 @@ function findMatchingWord(text: string, words: string[]): string | null {
 }
 
 /**
+ * Check if text contains a safe template file pattern
+ * e.g., .env.example, .env.sample, config.template.json
+ */
+function containsSafeTemplateFile(text: string): boolean {
+  const normalizedText = normalize(text);
+  return SAFE_TEMPLATE_SUFFIXES.some(suffix => normalizedText.includes(suffix));
+}
+
+/**
  * Check if text matches an intent pattern
  *
  * Balanced approach:
@@ -239,6 +257,12 @@ export function matchIntent(text: string, context?: {
   // Use textForSecretCheck which strips commit message content for commands
   const gitAction = findMatchingWord(textForSecretCheck, GIT_ACTION_WORDS);
   const sensitiveTarget = findMatchingWord(textForSecretCheck, SENSITIVE_TARGETS);
+
+  // Skip if this is a safe template file (e.g., .env.example)
+  if (gitAction && sensitiveTarget && containsSafeTemplateFile(textForSecretCheck)) {
+    // Template files are safe to commit
+    return null;
+  }
 
   if (gitAction && sensitiveTarget) {
     // High confidence if both are present
