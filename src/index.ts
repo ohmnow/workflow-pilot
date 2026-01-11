@@ -97,8 +97,16 @@ async function main(): Promise<void> {
       console.error('[WP Debug] Total suggestions:', allSuggestions.length);
     }
 
+    // Always output status to stderr for visibility
+    const displayTime = new Date().toLocaleTimeString();
     if (allSuggestions.length > 0) {
       const formattedSuggestion = formatSuggestion(allSuggestions, context);
+
+      // Visible feedback to user via stderr
+      console.error(`\x1b[36m[Workflow Pilot ${displayTime}]\x1b[0m ${allSuggestions.length} suggestion(s):`);
+      for (const suggestion of allSuggestions) {
+        console.error(`  \x1b[33m→\x1b[0m ${suggestion.suggestion}`);
+      }
 
       const output: HookOutput = {
         hookSpecificOutput: {
@@ -108,6 +116,8 @@ async function main(): Promise<void> {
       };
 
       console.log(JSON.stringify(output));
+    } else {
+      console.error(`\x1b[36m[Workflow Pilot ${displayTime}]\x1b[0m ✓ No suggestions`);
     }
 
     // Exit successfully

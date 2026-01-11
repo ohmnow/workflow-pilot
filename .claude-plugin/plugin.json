@@ -1,0 +1,8 @@
+{
+  "name": "workflow-pilot",
+  "displayName": "Workflow Pilot",
+  "version": "0.2.0",
+  "description": "AI-powered workflow guidance for Claude Code - suggests best practices for testing, git, refactoring, and agentic coding techniques",
+  "author": "Chris",
+  "hooks": "../hooks/hooks.json"
+}
