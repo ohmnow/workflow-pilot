@@ -1,0 +1,16 @@
+{
+  "$schema": "../preset-schema.json",
+  "name": "base",
+  "description": "Base preset with all rules enabled - used as fallback",
+  "categories": {
+    "testing": true,
+    "git": true,
+    "security": true,
+    "claudeCode": true,
+    "refactoring": true
+  },
+  "rules": {
+    "enabled": [],
+    "disabled": []
+  }
+}

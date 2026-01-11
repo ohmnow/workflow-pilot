@@ -7,8 +7,18 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { getCooldownMinutes } from '../config/loader.js';
+import { classifyFile, FileType, hasCodeFiles } from '../utils/file-classifier.js';
 
 const STATE_FILE = '/tmp/workflow-pilot-state.json';
+
+/**
+ * Record of a file change in the session
+ */
+interface FileChange {
+  path: string;
+  type: FileType;
+  timestamp: number;
+}
 
 interface CooldownState {
   /** Rule ID -> last triggered timestamp (ms) */
@@ -17,6 +27,8 @@ interface CooldownState {
   sessionStarted?: number;
   /** Total suggestions shown this session */
   suggestionsShown: number;
+  /** Files changed this session */
+  fileChanges?: FileChange[];
 }
 
 let state: CooldownState | null = null;
@@ -164,5 +176,92 @@ export function resetCooldowns(): void {
 export function resetRuleCooldown(ruleId: string): void {
   const currentState = loadState();
   delete currentState.lastTriggered[ruleId];
+  saveState();
+}
+
+/**
+ * Record a file change in the session
+ *
+ * @param filePath - Path to the file that was changed
+ */
+export function recordFileChange(filePath: string): void {
+  const currentState = loadState();
+
+  if (!currentState.fileChanges) {
+    currentState.fileChanges = [];
+  }
+
+  // Classify the file
+  const classification = classifyFile(filePath);
+
+  // Add to changes (avoid duplicates by checking path)
+  const existingIndex = currentState.fileChanges.findIndex(fc => fc.path === filePath);
+  if (existingIndex >= 0) {
+    // Update timestamp for existing file
+    currentState.fileChanges[existingIndex].timestamp = Date.now();
+  } else {
+    currentState.fileChanges.push({
+      path: filePath,
+      type: classification.type,
+      timestamp: Date.now(),
+    });
+  }
+
+  saveState();
+}
+
+/**
+ * Get all file changes in the current session
+ */
+export function getSessionFileChanges(): FileChange[] {
+  const currentState = loadState();
+  return currentState.fileChanges || [];
+}
+
+/**
+ * Check if any code files have been changed this session
+ * Used for smart test reminder filtering
+ */
+export function hasCodeChangesThisSession(): boolean {
+  const changes = getSessionFileChanges();
+  return changes.some(fc => fc.type === 'code' || fc.type === 'test');
+}
+
+/**
+ * Get file changes by type
+ */
+export function getFileChangesByType(type: FileType): FileChange[] {
+  const changes = getSessionFileChanges();
+  return changes.filter(fc => fc.type === type);
+}
+
+/**
+ * Get count of each file type changed
+ */
+export function getFileChangeStats(): Record<FileType, number> {
+  const changes = getSessionFileChanges();
+  const stats: Record<FileType, number> = {
+    code: 0,
+    test: 0,
+    config: 0,
+    docs: 0,
+    style: 0,
+    build: 0,
+    other: 0,
+  };
+
+  for (const change of changes) {
+    stats[change.type]++;
+  }
+
+  return stats;
+}
+
+/**
+ * Clear file changes (called when tests are run)
+ */
+export function clearFileChanges(): void {
+  const currentState = loadState();
+  currentState.fileChanges = [];
   saveState();
 }

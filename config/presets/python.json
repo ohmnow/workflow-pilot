@@ -1,0 +1,35 @@
+{
+  "$schema": "../preset-schema.json",
+  "name": "python",
+  "description": "Preset for Python projects (Django, Flask, FastAPI, etc.)",
+  "extends": "base",
+  "categories": {
+    "testing": true,
+    "git": true,
+    "security": true,
+    "claudeCode": true,
+    "refactoring": true
+  },
+  "rules": {
+    "enabled": [
+      "type-hints",
+      "virtualenv-check",
+      "requirements-pinning",
+      "docstring-check"
+    ],
+    "disabled": [
+      "frontend-only-rules",
+      "node-specific-rules"
+    ]
+  },
+  "customRules": {
+    "typeHints": {
+      "requireReturnTypes": true,
+      "requireParamTypes": true
+    },
+    "testPatterns": {
+      "unitTests": "test_*.py",
+      "pytestConfig": "conftest.py"
+    }
+  }
+}

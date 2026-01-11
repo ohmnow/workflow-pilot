@@ -1,0 +1,34 @@
+{
+  "$schema": "../preset-schema.json",
+  "name": "frontend",
+  "description": "Preset for React, Vue, Angular, and other frontend projects",
+  "extends": "base",
+  "categories": {
+    "testing": true,
+    "git": true,
+    "security": true,
+    "claudeCode": true,
+    "refactoring": true
+  },
+  "rules": {
+    "enabled": [
+      "test-after-component",
+      "accessibility-check",
+      "bundle-size-warning",
+      "component-naming"
+    ],
+    "disabled": [
+      "backend-only-rules"
+    ]
+  },
+  "customRules": {
+    "componentNaming": {
+      "pattern": "PascalCase",
+      "enforceFileMatch": true
+    },
+    "testPatterns": {
+      "componentTests": "*.test.tsx",
+      "e2eTests": "*.e2e.ts"
+    }
+  }
+}

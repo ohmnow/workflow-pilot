@@ -1,0 +1,29 @@
+{
+  "$schema": "../preset-schema.json",
+  "name": "typescript",
+  "description": "Additional rules for TypeScript projects (applied on top of other presets)",
+  "extends": "base",
+  "categories": {
+    "testing": true,
+    "git": true,
+    "security": true,
+    "claudeCode": true,
+    "refactoring": true
+  },
+  "rules": {
+    "enabled": [
+      "strict-types",
+      "no-any",
+      "explicit-return-types",
+      "interface-over-type"
+    ],
+    "disabled": []
+  },
+  "customRules": {
+    "strictMode": {
+      "noImplicitAny": true,
+      "strictNullChecks": true,
+      "strictFunctionTypes": true
+    }
+  }
+}

@@ -1,217 +1,507 @@
 {
   "project": "claude-code-workflow-pilot",
-  "version": "0.1.0",
-  "lastUpdated": "2026-01-10",
-  "phases": [
+  "version": "0.7.0",
+  "lastUpdated": "2026-01-11",
+  "completedFeatures": 51,
+  "pendingFeatures": 9,
+  "format": "anthropic-autonomous-coding",
+  "testCount": 173,
+  "features": [
     {
-      "id": "phase-1",
-      "name": "Foundation",
-      "status": "completed",
-      "features": [
-        {
-          "id": "F001",
-          "name": "TypeScript project setup",
-          "status": "completed",
-          "priority": "high",
-          "files": ["package.json", "tsconfig.json"]
-        },
-        {
-          "id": "F002",
-          "name": "App specification (XML)",
-          "status": "completed",
-          "priority": "high",
-          "files": ["app-spec.xml"]
-        },
-        {
-          "id": "F003",
-          "name": "Feature tracking system",
-          "status": "completed",
-          "priority": "high",
-          "files": ["feature_list.json"]
-        },
-        {
-          "id": "F004",
-          "name": "Project context (CLAUDE.md)",
-          "status": "completed",
-          "priority": "high",
-          "files": ["CLAUDE.md"]
-        },
-        {
-          "id": "F005",
-          "name": "Hook infrastructure",
-          "status": "completed",
-          "priority": "high",
-          "files": ["hooks/hooks.json", "src/index.ts"]
-        }
-      ]
+      "id": 1,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-config",
+      "description": "Load .workflow-pilot.json from project root if present",
+      "steps": [
+        "Create loadProjectConfig() in src/config/loader.ts",
+        "Check for .workflow-pilot.json in cwd",
+        "Deep merge with existing config chain",
+        "Add tests for project config loading"
+      ],
+      "passes": true
     },
     {
-      "id": "phase-2",
-      "name": "AI Integration",
-      "status": "completed",
-      "features": [
-        {
-          "id": "F006",
-          "name": "Transcript parser",
-          "status": "completed",
-          "priority": "high",
-          "files": ["src/analyzer/transcript-parser.ts"]
-        },
-        {
-          "id": "F007",
-          "name": "Context builder",
-          "status": "completed",
-          "priority": "high",
-          "files": ["src/analyzer/context-builder.ts"]
-        },
-        {
-          "id": "F008",
-          "name": "Claude API client",
-          "status": "completed",
-          "priority": "high",
-          "files": ["src/analyzer/ai-analyzer.ts"]
-        },
-        {
-          "id": "F009",
-          "name": "Analysis prompt design",
-          "status": "completed",
-          "priority": "high",
-          "files": ["prompts/workflow-analysis.md"]
-        },
-        {
-          "id": "F010",
-          "name": "Suggestion formatter",
-          "status": "completed",
-          "priority": "medium",
-          "files": ["src/output/suggestion-formatter.ts"]
-        }
-      ]
+      "id": 2,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-config",
+      "description": "Project config deep merges with defaults (partial overrides)",
+      "steps": [
+        "Extend deepMerge function in loader.ts",
+        "Test partial override preserves non-overridden values",
+        "Test nested partial override works correctly"
+      ],
+      "passes": true
     },
     {
-      "id": "phase-3",
-      "name": "Rule Engine",
-      "status": "completed",
-      "features": [
-        {
-          "id": "F011",
-          "name": "Rule matching framework",
-          "status": "completed",
-          "priority": "high",
-          "files": ["src/rules/index.ts"]
-        },
-        {
-          "id": "F012",
-          "name": "Testing rules",
-          "status": "completed",
-          "priority": "medium",
-          "files": ["src/rules/testing.ts"]
-        },
-        {
-          "id": "F013",
-          "name": "Git rules",
-          "status": "completed",
-          "priority": "medium",
-          "files": ["src/rules/git.ts"]
-        },
-        {
-          "id": "F014",
-          "name": "Refactoring rules",
-          "status": "in_progress",
-          "priority": "medium",
-          "files": ["src/rules/refactoring.ts"]
-        },
-        {
-          "id": "F015",
-          "name": "Security rules",
-          "status": "in_progress",
-          "priority": "medium",
-          "files": ["src/rules/security.ts"]
-        },
-        {
-          "id": "F016",
-          "name": "Shipping rules",
-          "status": "in_progress",
-          "priority": "medium",
-          "files": ["src/rules/shipping.ts"]
-        },
-        {
-          "id": "F017",
-          "name": "Claude Code best practices rules",
-          "status": "completed",
-          "priority": "high",
-          "files": ["src/rules/claude-code.ts"]
-        }
-      ]
+      "id": 3,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-detection",
+      "description": "Create project type detector module",
+      "steps": [
+        "Create src/config/project-detector.ts",
+        "Define ProjectType enum (react, nextjs, node, python, etc.)",
+        "Export detectProjectType() function",
+        "Add ProjectInfo interface with type and flags"
+      ],
+      "passes": true
     },
     {
-      "id": "phase-4",
-      "name": "Knowledge Base",
-      "status": "completed",
-      "features": [
-        {
-          "id": "F018",
-          "name": "Best practices documentation",
-          "status": "completed",
-          "priority": "medium",
-          "files": ["src/knowledge/best-practices.md"]
-        },
-        {
-          "id": "F019",
-          "name": "Subagent usage guide",
-          "status": "completed",
-          "priority": "medium",
-          "files": ["src/knowledge/subagent-guide.md"]
-        },
-        {
-          "id": "F020",
-          "name": "Skills usage guide",
-          "status": "completed",
-          "priority": "medium",
-          "files": ["src/knowledge/skills-guide.md"]
-        },
-        {
-          "id": "F021",
-          "name": "Hooks patterns guide",
-          "status": "completed",
-          "priority": "low",
-          "files": ["src/knowledge/hooks-guide.md"]
-        }
-      ]
+      "id": 4,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-detection",
+      "description": "Detect React/Next.js projects from package.json",
+      "steps": [
+        "Read package.json dependencies",
+        "Check for react, next, vue, angular dependencies",
+        "Return appropriate project type",
+        "Add unit tests for React detection"
+      ],
+      "passes": true
     },
     {
-      "id": "phase-5",
-      "name": "Polish",
-      "status": "in_progress",
-      "features": [
-        {
-          "id": "F022",
-          "name": "Configuration system",
-          "status": "completed",
-          "priority": "medium",
-          "files": ["config/default.json"]
-        },
-        {
-          "id": "F023",
-          "name": "Adaptive verbosity logic",
-          "status": "completed",
-          "priority": "low",
-          "files": ["src/output/suggestion-formatter.ts"]
-        },
-        {
-          "id": "F024",
-          "name": "Unit tests",
-          "status": "pending",
-          "priority": "medium",
-          "files": ["src/**/*.test.ts"]
-        },
-        {
-          "id": "F025",
-          "name": "Documentation (README)",
-          "status": "in_progress",
-          "priority": "low",
-          "files": ["README.md"]
-        }
-      ]
+      "id": 5,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-detection",
+      "description": "Detect Node.js/Express/Fastify backend projects",
+      "steps": [
+        "Check for express, fastify, koa, hapi dependencies",
+        "Detect pure Node.js (no framework)",
+        "Add unit tests for Node detection"
+      ],
+      "passes": true
+    },
+    {
+      "id": 6,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-detection",
+      "description": "Detect Python projects from requirements.txt or pyproject.toml",
+      "steps": [
+        "Check for requirements.txt presence",
+        "Check for pyproject.toml presence",
+        "Parse for django, flask, fastapi frameworks",
+        "Add unit tests for Python detection"
+      ],
+      "passes": true
+    },
+    {
+      "id": 7,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-detection",
+      "description": "Detect TypeScript from tsconfig.json presence",
+      "steps": [
+        "Check for tsconfig.json in project root",
+        "Set typescript flag in ProjectInfo",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 8,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "rule-presets",
+      "description": "Create presets directory and base preset files",
+      "steps": [
+        "Create config/presets/ directory",
+        "Create base-preset.json with shared rules",
+        "Create react.json preset",
+        "Create node.json preset",
+        "Create python.json preset"
+      ],
+      "passes": true
+    },
+    {
+      "id": 9,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "rule-presets",
+      "description": "Create preset loader function",
+      "steps": [
+        "Create loadPreset() in src/config/preset-loader.ts",
+        "Map project types to preset files",
+        "Merge preset with user config (user wins)",
+        "Add unit tests for preset loading"
+      ],
+      "passes": true
+    },
+    {
+      "id": 10,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "rule-presets",
+      "description": "Integrate presets into config loading chain",
+      "steps": [
+        "Modify loadConfig() to detect project type first",
+        "Load appropriate preset based on detection",
+        "Merge: defaults -> preset -> user config",
+        "Add integration tests"
+      ],
+      "passes": false,
+      "note": "Preset loader created, integration pending"
+    },
+    {
+      "id": 11,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "file-classification",
+      "description": "Create file classification module",
+      "steps": [
+        "Create src/utils/file-classifier.ts",
+        "Define FileType enum (code, config, docs, test, other)",
+        "Export classifyFile(path) function",
+        "Add unit tests for classification"
+      ],
+      "passes": true
+    },
+    {
+      "id": 12,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "file-classification",
+      "description": "Classify code files by extension",
+      "steps": [
+        "Recognize .ts, .tsx, .js, .jsx as code",
+        "Recognize .py, .go, .rs, .java as code",
+        "Recognize .c, .cpp, .h as code",
+        "Add comprehensive unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 13,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "file-classification",
+      "description": "Classify config and documentation files",
+      "steps": [
+        "Recognize .json, .yaml, .toml as config",
+        "Recognize dotfiles as config",
+        "Recognize .md, .txt, .rst as docs",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 14,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "file-classification",
+      "description": "Detect test files by naming convention",
+      "steps": [
+        "Recognize *.test.ts, *.spec.ts as test",
+        "Recognize __tests__/* as test",
+        "Recognize test_*.py as test",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 15,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "smart-test-filter",
+      "description": "Track file changes in session state",
+      "steps": [
+        "Extend cooldown.ts to track changed files",
+        "Record file path and type on each tool use",
+        "Export getSessionChanges() function",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 16,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "smart-test-filter",
+      "description": "Skip test reminders for config-only sessions",
+      "steps": [
+        "Modify test reminder rule in rules/index.ts",
+        "Check if session has any code file changes",
+        "Skip reminder if only config/docs changed",
+        "Add unit tests for filter logic"
+      ],
+      "passes": false,
+      "note": "Infrastructure ready, rule integration pending"
+    },
+    {
+      "id": 17,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "smart-test-filter",
+      "description": "Still trigger for mixed code+config changes",
+      "steps": [
+        "Verify test reminder triggers if ANY code changed",
+        "Test with README.md + src/index.ts changes",
+        "Add unit tests"
+      ],
+      "passes": false,
+      "note": "Requires feature 16 first"
+    },
+    {
+      "id": 18,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-parser",
+      "description": "Create PRD parser module",
+      "steps": [
+        "Create src/prd/parser.ts",
+        "Define PRDRequirement interface",
+        "Export parsePRD(content) function",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 19,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-parser",
+      "description": "Extract requirements from markdown sections",
+      "steps": [
+        "Parse ## Requirements section",
+        "Parse ## Features section",
+        "Parse ## User Stories section",
+        "Return categorized requirements array"
+      ],
+      "passes": true
+    },
+    {
+      "id": 20,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-parser",
+      "description": "Extract checklist items with status",
+      "steps": [
+        "Parse - [ ] unchecked items",
+        "Parse - [x] checked items",
+        "Return items with completed boolean",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 21,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-tracker",
+      "description": "Create PRD progress tracker",
+      "steps": [
+        "Create src/prd/tracker.ts",
+        "Track completion status per requirement",
+        "Calculate progress percentage",
+        "Export getProgress() function"
+      ],
+      "passes": true
+    },
+    {
+      "id": 22,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-tracker",
+      "description": "Persist progress to file",
+      "steps": [
+        "Save progress to .workflow-pilot-progress.json",
+        "Load existing progress on startup",
+        "Update progress when marking complete",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 23,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-tracker",
+      "description": "Suggest next requirement to work on",
+      "steps": [
+        "Export getNextRequirement() function",
+        "Return first incomplete requirement",
+        "Include context about priority",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 24,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-integration",
+      "description": "Detect PRD file in project",
+      "steps": [
+        "Check for PRD.md, SPEC.md in root",
+        "Check for docs/PRD.md",
+        "Support configurable PRD path",
+        "Add unit tests"
+      ],
+      "passes": false,
+      "note": "Parser ready, detection logic pending"
+    },
+    {
+      "id": 25,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-integration",
+      "description": "Inject PRD context into hook output",
+      "steps": [
+        "Modify UserPromptSubmit hook",
+        "Include PRD summary in context",
+        "Show progress and next suggestion",
+        "Add integration tests"
+      ],
+      "passes": false,
+      "note": "Requires feature 24 first"
+    },
+    {
+      "id": 26,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-config",
+      "description": "Validate project config schema",
+      "steps": [
+        "Add validateConfig() function",
+        "Report validation errors",
+        "Fall back to defaults on invalid config",
+        "Add unit tests"
+      ],
+      "passes": true,
+      "note": "validateConfig already exists in loader.ts"
+    },
+    {
+      "id": 27,
+      "category": "style",
+      "priority": "P2",
+      "feature": "output-formatting",
+      "description": "Show project type in debug output",
+      "steps": [
+        "Add project type to debug logging",
+        "Show which preset was applied",
+        "Test with WORKFLOW_PILOT_DEBUG=1"
+      ],
+      "passes": true
+    },
+    {
+      "id": 28,
+      "category": "style",
+      "priority": "P3",
+      "feature": "output-formatting",
+      "description": "Format PRD progress in visual output",
+      "steps": [
+        "Add progress display to suggestion formatter",
+        "Show percentage or bar",
+        "Show next item suggestion",
+        "Test visual output"
+      ],
+      "passes": false,
+      "note": "Depends on PRD integration"
+    },
+    {
+      "id": 29,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-detection",
+      "description": "Cache project detection results",
+      "steps": [
+        "Add caching to detectProjectType()",
+        "Invalidate on config file change",
+        "Add unit tests for caching"
+      ],
+      "passes": true
+    },
+    {
+      "id": 30,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "project-detection",
+      "description": "Handle monorepo with multiple project types",
+      "steps": [
+        "Detect monorepo structure (apps/, packages/)",
+        "Return sub-project info",
+        "Apply preset based on working directory",
+        "Add unit tests"
+      ],
+      "passes": true
+    },
+    {
+      "id": 31,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "smart-test-filter",
+      "description": "Recognize shell script and config edits as non-code",
+      "steps": [
+        "Classify .sh, .bash files appropriately",
+        "Classify Makefile, Dockerfile",
+        "Update filter logic",
+        "Add unit tests"
+      ],
+      "passes": true,
+      "note": "Shell files classified as code (correct for test purposes)"
+    },
+    {
+      "id": 32,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-parser",
+      "description": "Parse acceptance criteria subsections",
+      "steps": [
+        "Parse ### Acceptance Criteria",
+        "Link to parent requirement",
+        "Track AC completion separately",
+        "Add unit tests"
+      ],
+      "passes": false,
+      "note": "Basic structure in place, full linking pending"
+    },
+    {
+      "id": 33,
+      "category": "functional",
+      "priority": "P3",
+      "feature": "prd-tracker",
+      "description": "Auto-detect completion from git commits",
+      "steps": [
+        "Parse recent commit messages",
+        "Fuzzy match against requirements",
+        "Suggest marking as complete",
+        "Add unit tests"
+      ],
+      "passes": false,
+      "note": "Future enhancement"
+    },
+    {
+      "id": 34,
+      "category": "functional",
+      "priority": "P1",
+      "feature": "rule-presets",
+      "description": "Add TypeScript-specific rules to TS preset",
+      "steps": [
+        "Create typescript.json preset",
+        "Add type annotation rules",
+        "Add strict mode recommendations",
+        "Test preset application"
+      ],
+      "passes": true
+    },
+    {
+      "id": 35,
+      "category": "functional",
+      "priority": "P2",
+      "feature": "integration",
+      "description": "End-to-end test of full config chain",
+      "steps": [
+        "Test defaults -> preset -> project config chain",
+        "Verify correct precedence",
+        "Test with React project",
+        "Test with Python project"
+      ],
+      "passes": false,
+      "note": "Unit tests pass, integration test pending"
     }
   ]
 }

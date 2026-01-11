@@ -17,49 +17,67 @@ import {
 let cachedConfig: WorkflowPilotConfig | null = null;
 
 /**
- * Find the config file path
- * Searches in order:
- * 1. WORKFLOW_PILOT_CONFIG env var
- * 2. ./config/workflow-pilot.json (project-specific)
- * 3. ~/.config/workflow-pilot/config.json (user global)
- * 4. Built-in default.json
+ * Find config files in priority order
+ * Returns an array of paths to merge (later paths override earlier)
+ *
+ * Priority (lowest to highest):
+ * 1. Built-in defaults
+ * 2. User global config (~/.config/workflow-pilot/config.json)
+ * 3. Project config (./config/workflow-pilot.json)
+ * 4. Project root config (./.workflow-pilot.json) - NEW
+ * 5. WORKFLOW_PILOT_CONFIG env var (highest priority)
  */
-function findConfigPath(): string | null {
-  // 1. Environment variable
-  if (process.env.WORKFLOW_PILOT_CONFIG) {
-    const envPath = process.env.WORKFLOW_PILOT_CONFIG;
-    if (existsSync(envPath)) {
-      return envPath;
-    }
-  }
+function findConfigPaths(): string[] {
+  const paths: string[] = [];
 
-  // 2. Project-specific config
-  const projectConfig = join(process.cwd(), 'config', 'workflow-pilot.json');
-  if (existsSync(projectConfig)) {
-    return projectConfig;
-  }
-
-  // 3. User global config
-  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
-  const userConfig = join(homeDir, '.config', 'workflow-pilot', 'config.json');
-  if (existsSync(userConfig)) {
-    return userConfig;
-  }
-
-  // 4. Built-in default (relative to project root)
-  // Try common locations
+  // 1. Built-in default (lowest priority)
   const possibleDefaults = [
     join(process.cwd(), 'config', 'default.json'),
     '/Users/chris/cc-projects/claude code terminal plugin/config/default.json',
   ];
-
   for (const path of possibleDefaults) {
     if (existsSync(path)) {
-      return path;
+      paths.push(path);
+      break;
     }
   }
 
-  return null;
+  // 2. User global config
+  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+  const userConfig = join(homeDir, '.config', 'workflow-pilot', 'config.json');
+  if (existsSync(userConfig)) {
+    paths.push(userConfig);
+  }
+
+  // 3. Project config directory
+  const projectConfig = join(process.cwd(), 'config', 'workflow-pilot.json');
+  if (existsSync(projectConfig)) {
+    paths.push(projectConfig);
+  }
+
+  // 4. Project root .workflow-pilot.json (NEW - user-specific project config)
+  const projectRootConfig = join(process.cwd(), '.workflow-pilot.json');
+  if (existsSync(projectRootConfig)) {
+    paths.push(projectRootConfig);
+  }
+
+  // 5. Environment variable (highest priority)
+  if (process.env.WORKFLOW_PILOT_CONFIG) {
+    const envPath = process.env.WORKFLOW_PILOT_CONFIG;
+    if (existsSync(envPath)) {
+      paths.push(envPath);
+    }
+  }
+
+  return paths;
+}
+
+/**
+ * @deprecated Use findConfigPaths() instead
+ */
+function findConfigPath(): string | null {
+  const paths = findConfigPaths();
+  return paths.length > 0 ? paths[paths.length - 1] : null;
 }
 
 /**
@@ -146,6 +164,9 @@ function validateConfig(config: unknown): config is Partial<WorkflowPilotConfig>
 /**
  * Load configuration
  *
+ * Merges configs in priority order:
+ * defaults -> user global -> project config -> project root -> env var
+ *
  * @param forceReload - Skip cache and reload from file
  */
 export function loadConfig(forceReload = false): WorkflowPilotConfig {
@@ -154,17 +175,21 @@ export function loadConfig(forceReload = false): WorkflowPilotConfig {
     return cachedConfig;
   }
 
-  let userConfig: Partial<WorkflowPilotConfig> = {};
+  // Start with defaults
+  let mergedConfig: Partial<WorkflowPilotConfig> = {};
 
-  // Try to load from file
-  const configPath = findConfigPath();
-  if (configPath) {
+  // Load and merge all config files in priority order
+  const configPaths = findConfigPaths();
+  for (const configPath of configPaths) {
     try {
       const content = readFileSync(configPath, 'utf-8');
       const parsed = JSON.parse(content);
 
       if (validateConfig(parsed)) {
-        userConfig = parsed;
+        mergedConfig = deepMerge(
+          deepMerge(DEFAULT_CONFIG, mergedConfig),
+          parsed
+        );
 
         if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
           console.error(`[WP Debug] Loaded config from: ${configPath}`);
@@ -175,16 +200,16 @@ export function loadConfig(forceReload = false): WorkflowPilotConfig {
     }
   }
 
-  // Check for mode override via environment
+  // Check for mode override via environment (highest priority)
   if (process.env.WORKFLOW_PILOT_MODE) {
     const envMode = process.env.WORKFLOW_PILOT_MODE as OperatingMode;
     if (['minimal', 'training', 'guidance'].includes(envMode)) {
-      userConfig.mode = envMode;
+      mergedConfig.mode = envMode;
     }
   }
 
-  // Merge with defaults
-  let finalConfig = deepMerge(DEFAULT_CONFIG, userConfig);
+  // Final merge with defaults to ensure all fields present
+  let finalConfig = deepMerge(DEFAULT_CONFIG, mergedConfig);
 
   // Apply mode preset
   finalConfig = applyModePreset(finalConfig);

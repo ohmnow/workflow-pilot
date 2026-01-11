@@ -1,0 +1,35 @@
+{
+  "$schema": "../preset-schema.json",
+  "name": "node",
+  "description": "Preset for Node.js backend projects (Express, Fastify, etc.)",
+  "extends": "base",
+  "categories": {
+    "testing": true,
+    "git": true,
+    "security": true,
+    "claudeCode": true,
+    "refactoring": true
+  },
+  "rules": {
+    "enabled": [
+      "async-error-handling",
+      "env-security",
+      "api-validation",
+      "database-connection-check"
+    ],
+    "disabled": [
+      "frontend-only-rules",
+      "component-naming"
+    ]
+  },
+  "customRules": {
+    "asyncHandling": {
+      "requireTryCatch": true,
+      "requireErrorMiddleware": true
+    },
+    "testPatterns": {
+      "unitTests": "*.test.ts",
+      "integrationTests": "*.integration.test.ts"
+    }
+  }
+}
