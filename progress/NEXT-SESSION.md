@@ -527,9 +527,52 @@ Once manual testing is complete, remaining work:
 
 ---
 
+## Future Enhancements
+
+### Hardcoded Secret Detection in Code Content
+**Discovered:** 2026-01-11 during real-world vibe coding testing
+
+**Gap:** The intent matcher catches `git add .env` but does NOT catch hardcoded secrets written directly in code, such as:
+```javascript
+const SECRET = "password123";  // This slips through
+const API_KEY = "sk-abc123";   // This too
+```
+
+**Why it happens:** The `matchIntent()` function has `hardcoding-secrets` detection, but it only triggers when `context.isCodeContent` is true. Currently, the hook doesn't pass this context when analyzing Edit tool operations.
+
+**Proposed fix:**
+1. In PostToolUse hook for Edit/Write tools, analyze the `new_string` or file content
+2. Pass `{ isCodeContent: true }` to `matchIntent()`
+3. Look for patterns like `password\s*=\s*["']`, `secret\s*=`, `api_key\s*=`, etc.
+4. Emit a WARNING (not blocking) suggesting environment variables
+
+**Priority:** Medium - This is a common vibe coder anti-pattern that leads to leaked secrets.
+
+---
+
+### False Positive: .gitignore Content Triggering Sensitive File Alert
+**Discovered:** 2026-01-11 during real-world testing
+
+**Gap:** When creating a `.gitignore` file that lists `.env` as an ignored pattern, the command:
+```bash
+echo ".env" > .gitignore && git add .
+```
+Triggers the "ATTEMPTING TO COMMIT SENSITIVE FILES" alert because `.env` appears in the command string.
+
+**Why it happens:** The intent matcher sees `git add` + `.env` in the same command, even though `.env` is just content being written to `.gitignore`, not a file being added.
+
+**Proposed fix:**
+1. Check if the sensitive file pattern appears as a filename vs. as string content
+2. Or: Only trigger on `git add <sensitive-file>` where the file actually exists
+3. Or: Exclude matches where the sensitive pattern is inside quoted strings or heredocs
+
+**Priority:** Low - Workaround is to use separate commands or Write tool.
+
+---
+
 ## Notes
 
-- All 173 automated tests passing
+- All 178 automated tests passing (5 added for template file fix)
 - Manual testing verifies real-world behavior
 - PRD foundation ready for "autonomous senior dev" vision
 - File at: `progress/NEXT-SESSION.md`
