@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-11
 **Version:** 0.7.0
-**Status:** Production Ready with Extended Features
+**Status:** Ready for Manual Testing
 
 ---
 
@@ -16,55 +16,470 @@ npm test -- --run  # Should pass 173 tests
 
 ---
 
-## Current State Summary
+## Manual Testing Checklist
 
-The plugin is a fully functional MVP with significant new features:
+This session's goal is to verify all features work correctly in Claude Code.
 
-### Completed Features (This Session)
-- **Project Config Loading**: `.workflow-pilot.json` in project root
-- **Project Type Detection**: React, Next.js, Vue, Angular, Node, Express, Python, Go, Rust
-- **Rule Presets System**: config/presets/ with frontend, node, python, typescript presets
-- **File Classification**: code, test, config, docs, style, build classification
-- **Smart Test Filter Infrastructure**: Track file changes, hasCodeChangesThisSession()
-- **PRD Parser**: Parse markdown PRDs, extract requirements/features/user stories
-- **PRD Tracker**: Persist progress, suggest next requirement
+### Pre-Test Setup
 
-### Test Summary
-| Suite | Tests |
-|-------|-------|
-| install.test.js | 19 |
-| intent-matcher.test.ts | 44 |
-| rules/index.test.ts | 25 |
-| file-classifier.test.ts | 38 |
-| project-detector.test.ts | 25 |
-| prd/parser.test.ts | 22 |
-| **Total** | **173** |
+```bash
+# Ensure latest build
+cd "/Users/chris/cc-projects/claude code terminal plugin"
+npm run build
 
-### Architecture
+# Install hooks if not already done
+node scripts/install.js
+
+# Enable debug mode for visibility
+export WORKFLOW_PILOT_DEBUG=1
+```
+
+---
+
+## Test 1: Hook System Verification
+
+### Test 1.1: UserPromptSubmit Hook
+**What to do:** Start a fresh Claude Code session and type any prompt.
+
+**Expected:** You should see hook output like:
+```
+[Workflow Pilot] 💡 Consider using Plan mode...
+```
+
+**Verify:** Hook fires on every prompt submission.
+
+---
+
+### Test 1.2: PreToolUse Blocking (CRITICAL)
+**What to do:** Ask Claude to run a dangerous command.
+
+```
+Try: "Run git push --force origin main"
+```
+
+**Expected:**
+```
+🚨 CRITICAL ALERT: Dangerous Git Operation
+   Attempting: force push to remote
+   This can permanently destroy commit history for all collaborators.
+```
+Command should be BLOCKED (not executed).
+
+**Also test:**
+```
+Try: "Run git add .env"
+```
+**Expected:** BLOCKED with sensitive file warning.
+
+```
+Try: "Run git add .env.example"
+```
+**Expected:** ALLOWED (template files are safe).
+
+---
+
+### Test 1.3: PostToolUse Feedback
+**What to do:** Ask Claude to edit a code file.
+
+```
+Try: "Add a comment to src/index.ts"
+```
+
+**Expected:** After the edit completes, you may see suggestions like:
+- Test reminder (if code was changed)
+- Commit reminder (if many files uncommitted)
+
+---
+
+## Test 2: Project Config Loading
+
+### Test 2.1: Create Project Config
+**What to do:**
+```bash
+# Create a project-specific config
+echo '{"mode": "training"}' > .workflow-pilot.json
+```
+
+Then start a new Claude Code session with debug enabled:
+```bash
+export WORKFLOW_PILOT_DEBUG=1
+```
+
+**Expected output:**
+```
+[WP Debug] Loaded config from: /path/to/.workflow-pilot.json
+```
+
+**Cleanup:**
+```bash
+rm .workflow-pilot.json
+```
+
+---
+
+### Test 2.2: Config Precedence
+**What to do:**
+```bash
+# Create project config with training mode
+echo '{"mode": "training"}' > .workflow-pilot.json
+
+# But override via environment
+export WORKFLOW_PILOT_MODE=minimal
+```
+
+**Expected:** Environment variable wins. Mode should be `minimal`.
+
+**Cleanup:**
+```bash
+rm .workflow-pilot.json
+unset WORKFLOW_PILOT_MODE
+```
+
+---
+
+## Test 3: Operating Modes
+
+### Test 3.1: Minimal Mode
+**What to do:**
+```bash
+export WORKFLOW_PILOT_MODE=minimal
+```
+Start Claude Code, trigger various actions.
+
+**Expected:**
+- Only CRITICAL alerts appear (red, security-related)
+- NO warning suggestions
+- NO info tips
+- Very quiet operation
+
+---
+
+### Test 3.2: Training Mode
+**What to do:**
+```bash
+export WORKFLOW_PILOT_MODE=training
+```
+
+**Expected:**
+- All alert tiers enabled
+- More frequent tips
+- Explanations included with suggestions
+- May ask about intent
+
+---
+
+### Test 3.3: Guidance Mode (Default)
+**What to do:**
+```bash
+export WORKFLOW_PILOT_MODE=guidance
+# or just unset it
+unset WORKFLOW_PILOT_MODE
+```
+
+**Expected:**
+- All tiers enabled
+- Balanced frequency
+- Concise output (no lengthy explanations)
+
+---
+
+## Test 4: Project Type Detection
+
+### Test 4.1: Detect This Project (TypeScript/Node)
+**What to do:** In this project directory with debug enabled:
+```bash
+export WORKFLOW_PILOT_DEBUG=1
+```
+
+**Expected output:**
+```
+[WP Debug] Detected project type: node
+[WP Debug] TypeScript: true, Monorepo: false
+```
+
+---
+
+### Test 4.2: Test React Detection
+**What to do:** Create a temporary test directory:
+```bash
+mkdir /tmp/test-react && cd /tmp/test-react
+echo '{"dependencies": {"react": "^18.0.0"}}' > package.json
+export WORKFLOW_PILOT_DEBUG=1
+# Start Claude Code here
+```
+
+**Expected:**
+```
+[WP Debug] Detected project type: react
+```
+
+**Cleanup:**
+```bash
+rm -rf /tmp/test-react
+```
+
+---
+
+### Test 4.3: Test Python Detection
+**What to do:**
+```bash
+mkdir /tmp/test-python && cd /tmp/test-python
+echo "flask==2.0.0" > requirements.txt
+export WORKFLOW_PILOT_DEBUG=1
+# Start Claude Code here
+```
+
+**Expected:**
+```
+[WP Debug] Detected project type: python-flask
+```
+
+**Cleanup:**
+```bash
+rm -rf /tmp/test-python
+```
+
+---
+
+## Test 5: File Classification (Smart Test Filtering)
+
+### Test 5.1: Code File Changes
+**What to do:** Ask Claude to edit a `.ts` file.
+
+**Expected:** Test reminder should eventually trigger (based on cooldown).
+
+---
+
+### Test 5.2: Config-Only Changes
+**What to do:** Ask Claude to only edit config/docs files:
+```
+"Update the README.md to add a new section"
+"Add an entry to .gitignore"
+```
+
+**Expected:** NO test reminder (only config/docs changed, no code).
+
+---
+
+### Test 5.3: Sensitive File Detection
+**What to do:**
+```
+Try: "Create a .env file with DATABASE_URL=secret"
+```
+
+**Expected:** Warning about sensitive file creation.
+
+```
+Try: "Create a .env.example file with DATABASE_URL=placeholder"
+```
+
+**Expected:** No warning (template files are safe).
+
+---
+
+## Test 6: PRD Parser (Manual Verification)
+
+### Test 6.1: Create and Parse a PRD
+**What to do:**
+```bash
+cd "/Users/chris/cc-projects/claude code terminal plugin"
+```
+
+Create a test PRD:
+```bash
+cat > /tmp/test-prd.md << 'EOF'
+# My Product PRD
+
+## Requirements
+- [ ] User authentication
+- [ ] Dashboard page
+- [x] Landing page (completed)
+
+## Features
+- Dark mode toggle
+- Export to PDF
+
+## User Stories
+- As a user, I want to login so I can access my data
+EOF
+```
+
+Then in Node REPL or a test script:
+```javascript
+import { parsePRD } from './dist/prd/parser.js';
+import { readFileSync } from 'fs';
+
+const content = readFileSync('/tmp/test-prd.md', 'utf-8');
+const prd = parsePRD(content);
+
+console.log('Title:', prd.title);
+console.log('Requirements:', prd.requirements.length);
+console.log('Sections:', prd.sections);
+prd.requirements.forEach(r => {
+  console.log(`  [${r.completed ? 'x' : ' '}] ${r.text} (${r.category})`);
+});
+```
+
+**Expected output:**
+```
+Title: My Product PRD
+Requirements: 6
+Sections: [ 'Requirements', 'Features', 'User Stories' ]
+  [ ] User authentication (requirement)
+  [ ] Dashboard page (requirement)
+  [x] Landing page (completed) (requirement)
+  [ ] Dark mode toggle (feature)
+  [ ] Export to PDF (feature)
+  [ ] As a user, I want to login so I can access my data (user-story)
+```
+
+---
+
+### Test 6.2: Progress Tracking
+**What to do:** Use the tracker to persist progress:
+```javascript
+import { initializeProgress, markCompleted, getProgressSummary } from './dist/prd/tracker.js';
+import { parsePRD } from './dist/prd/parser.js';
+import { readFileSync } from 'fs';
+
+const content = readFileSync('/tmp/test-prd.md', 'utf-8');
+const prd = parsePRD(content);
+
+// Initialize tracking
+initializeProgress('/tmp/test-prd.md', content, '/tmp');
+
+// Mark one complete
+markCompleted('req-1', '/tmp');
+
+// Get summary
+const summary = getProgressSummary(prd, '/tmp');
+console.log(`Progress: ${summary.completed}/${summary.total} (${summary.percentage}%)`);
+console.log('Next:', summary.nextRequirement?.text);
+```
+
+**Expected:** Progress file created at `/tmp/.workflow-pilot-progress.json`
+
+---
+
+## Test 7: Cooldown System
+
+### Test 7.1: Verify Cooldown State
+**What to do:** After triggering some rules, check:
+```bash
+cat /tmp/workflow-pilot-state.json
+```
+
+**Expected:** JSON with `lastTriggered` timestamps for each rule.
+
+---
+
+### Test 7.2: Cooldown Suppression
+**What to do:** Trigger the same suggestion twice rapidly.
+
+**Expected:** Second trigger should be suppressed (silent) due to cooldown.
+
+---
+
+## Test 8: Integration Scenario
+
+### Full Development Session Test
+
+1. **Setup:**
+   ```bash
+   cd "/Users/chris/cc-projects/claude code terminal plugin"
+   export WORKFLOW_PILOT_DEBUG=1
+   export WORKFLOW_PILOT_MODE=guidance
+   ```
+
+2. **Start Claude Code** and verify hook output appears.
+
+3. **Test dangerous command blocking:**
+   ```
+   "Run git push --force origin main"
+   ```
+   Should be BLOCKED.
+
+4. **Edit a code file:**
+   ```
+   "Add a TODO comment to src/index.ts"
+   ```
+   Should succeed, may trigger test reminder.
+
+5. **Edit a config file:**
+   ```
+   "Add a comment to tsconfig.json"
+   ```
+   Should succeed, NO test reminder (config only).
+
+6. **Check cooldown state:**
+   ```bash
+   cat /tmp/workflow-pilot-state.json
+   ```
+
+7. **Verify all hooks working** by checking log:
+   ```bash
+   tail -50 /tmp/workflow-pilot.log
+   ```
+
+---
+
+## Test Results Checklist
+
+After completing tests, mark off:
+
+- [ ] **Test 1.1:** UserPromptSubmit hook fires
+- [ ] **Test 1.2:** PreToolUse blocks dangerous commands
+- [ ] **Test 1.3:** PostToolUse provides feedback
+- [ ] **Test 2.1:** Project config loads from .workflow-pilot.json
+- [ ] **Test 2.2:** Config precedence correct (env > file)
+- [ ] **Test 3.1:** Minimal mode shows only critical alerts
+- [ ] **Test 3.2:** Training mode shows all alerts with explanations
+- [ ] **Test 3.3:** Guidance mode balanced output
+- [ ] **Test 4.1:** TypeScript/Node project detected
+- [ ] **Test 4.2:** React project detected
+- [ ] **Test 4.3:** Python project detected
+- [ ] **Test 5.1:** Code changes trigger test reminder
+- [ ] **Test 5.2:** Config-only changes skip test reminder
+- [ ] **Test 5.3:** Sensitive files detected correctly
+- [ ] **Test 6.1:** PRD parser extracts requirements
+- [ ] **Test 6.2:** Progress tracker persists state
+- [ ] **Test 7.1:** Cooldown state file exists
+- [ ] **Test 7.2:** Rapid triggers are suppressed
+- [ ] **Test 8:** Full integration scenario passes
+
+---
+
+## Current Architecture
+
 ```
 src/
 ├── index.ts              # Hook entry point
 ├── config/
 │   ├── schema.ts         # TypeScript interfaces
-│   ├── loader.ts         # Config loading with .workflow-pilot.json
-│   ├── project-detector.ts  # NEW: Project type detection
-│   └── preset-loader.ts  # NEW: Load rule presets
+│   ├── loader.ts         # Config loading chain
+│   ├── project-detector.ts  # Project type detection
+│   └── preset-loader.ts  # Rule presets
 ├── state/
-│   └── cooldown.ts       # Cooldown + file change tracking
+│   └── cooldown.ts       # Cooldown + file tracking
 ├── utils/
-│   └── file-classifier.ts  # NEW: File type classification
+│   └── file-classifier.ts  # File type classification
 ├── prd/
-│   ├── parser.ts         # NEW: PRD markdown parser
-│   └── tracker.ts        # NEW: PRD progress tracking
-├── analyzer/             # Context analysis
+│   ├── parser.ts         # PRD markdown parser
+│   └── tracker.ts        # Progress persistence
+├── analyzer/
+│   ├── ai-analyzer.ts    # Claude API integration
+│   ├── context-builder.ts
+│   └── transcript-parser.ts
 ├── rules/
-│   ├── index.ts          # Rule definitions
+│   ├── index.ts          # 25 rule definitions
 │   └── intent-matcher.ts # Fuzzy security matching
-└── output/               # Formatting
+└── output/
+    ├── suggestion-formatter.ts
+    └── status-writer.ts
 
 config/
-├── default.json          # Default config
-└── presets/              # NEW: Rule presets
+├── default.json
+└── presets/
     ├── base.json
     ├── frontend.json
     ├── node.json
@@ -74,186 +489,47 @@ config/
 
 ---
 
-## What to Work On Next
-
-### Priority 1: Complete Integrations
-
-**Feature 10**: Integrate presets into config loading chain
-- Wire `loadPreset()` into `loadConfig()`
-- Apply preset based on detected project type
-- Add integration tests
-
-**Features 16-17**: Complete smart test filter integration
-- Modify test reminder rule to use `hasCodeChangesThisSession()`
-- Skip reminder if only config/docs changed
-- Add tests
-
-### Priority 2: PRD Integration
-
-**Feature 24**: Detect PRD file in project
-- Check for PRD.md, SPEC.md, docs/PRD.md
-- Make path configurable
-
-**Feature 25**: Inject PRD context into hook output
-- Show progress summary
-- Suggest next requirement
-
-### Priority 3: Future Enhancements
-
-**Feature 33**: Auto-detect completion from git commits
-- Parse commit messages
-- Fuzzy match against requirements
-- Suggest marking complete
-
----
-
-## Key Files Quick Reference
-
-| File | Purpose | Tests |
-|------|---------|-------|
-| `src/index.ts` | Hook entry, visual output | - |
-| `src/rules/index.ts` | Rule definitions | 25 |
-| `src/rules/intent-matcher.ts` | Fuzzy security matching | 44 |
-| `src/config/loader.ts` | Config loading chain | - |
-| `src/config/project-detector.ts` | Project type detection | 25 |
-| `src/config/preset-loader.ts` | Preset loading | - |
-| `src/utils/file-classifier.ts` | File classification | 38 |
-| `src/prd/parser.ts` | PRD parsing | 22 |
-| `src/prd/tracker.ts` | Progress tracking | - |
-| `scripts/install.js` | Installer | 19 |
-
----
-
-## Environment Variables
+## Key Commands Reference
 
 ```bash
-WORKFLOW_PILOT_MODE=guidance    # minimal, training, guidance
-WORKFLOW_PILOT_DEBUG=1          # Verbose logging
-WORKFLOW_PILOT_CONFIG=/path     # Custom config path
-ANTHROPIC_API_KEY=sk-ant-...    # For AI analysis
+# Build
+npm run build
+
+# Test (173 tests)
+npm test -- --run
+
+# Install hooks
+node scripts/install.js
+
+# Debug mode
+export WORKFLOW_PILOT_DEBUG=1
+
+# Mode switching
+export WORKFLOW_PILOT_MODE=minimal|training|guidance
+
+# Check hook activity
+tail -f /tmp/workflow-pilot.log
+
+# Check cooldown state
+cat /tmp/workflow-pilot-state.json
 ```
 
 ---
 
-## Testing Commands
+## After Testing: Next Development Priorities
 
-```bash
-npm test -- --run              # Run all 173 tests
-npm test -- --watch            # Watch mode
-npm run build                  # Compile TypeScript
-node scripts/install.js        # Install/update hooks
-tail -20 /tmp/workflow-pilot.log  # Check hook activity
-cat /tmp/workflow-pilot-state.json  # Check cooldown state
-```
+Once manual testing is complete, remaining work:
+
+1. **Feature 10:** Wire presets into loadConfig()
+2. **Features 16-17:** Wire smart test filter into rules
+3. **Features 24-25:** PRD file auto-detection and hook integration
+4. **Feature 28:** PRD progress display in output
 
 ---
 
-## New Config File Support
+## Notes
 
-Projects can now use `.workflow-pilot.json` in project root:
-
-```json
-{
-  "mode": "training",
-  "categories": {
-    "testing": true,
-    "security": true
-  }
-}
-```
-
-Priority order (lowest to highest):
-1. Built-in defaults
-2. User global (~/.config/workflow-pilot/config.json)
-3. Project config (./config/workflow-pilot.json)
-4. **Project root (./.workflow-pilot.json)** - NEW
-5. Environment variable override
-
----
-
-## Project Detection
-
-The plugin auto-detects project types:
-
-| Type | Detection Method |
-|------|------------------|
-| react | package.json: react dependency |
-| nextjs | package.json: next dependency |
-| vue | package.json: vue dependency |
-| angular | package.json: @angular/core |
-| node-express | package.json: express |
-| node-fastify | package.json: fastify |
-| python-flask | requirements.txt contains flask |
-| python-django | requirements.txt contains django |
-| python-fastapi | pyproject.toml contains fastapi |
-| go | go.mod exists |
-| rust | Cargo.toml exists |
-
-Also detects:
-- TypeScript (tsconfig.json)
-- Monorepo (workspaces, apps/, packages/)
-- Test framework (vitest, jest, pytest)
-- Package manager (npm, yarn, pnpm, pip, poetry)
-
----
-
-## Session Summary (2026-01-11)
-
-### What Was Done
-1. **Feature List**: Created Anthropic autonomous-coding format feature list (35 features)
-2. **Project Config**: Added .workflow-pilot.json support with config chain
-3. **Project Detector**: Full detection for React, Vue, Angular, Node, Python, Go, Rust
-4. **Rule Presets**: Created preset system with frontend, node, python, typescript presets
-5. **File Classifier**: Complete file type classification (code, test, config, docs, etc.)
-6. **Smart Test Filter**: Infrastructure for tracking file changes
-7. **PRD Parser**: Full markdown PRD parsing with requirements, features, user stories
-8. **PRD Tracker**: Progress persistence and next requirement suggestions
-9. **Tests**: Added 85 new tests (173 total, all passing)
-10. **Test Plan**: Created comprehensive manual test plan
-
-### Files Created
-```
-src/config/project-detector.ts     - Project type detection
-src/config/preset-loader.ts        - Preset loading
-src/utils/file-classifier.ts       - File classification
-src/prd/parser.ts                  - PRD parsing
-src/prd/tracker.ts                 - Progress tracking
-config/presets/base.json           - Base preset
-config/presets/frontend.json       - Frontend preset
-config/presets/node.json           - Node preset
-config/presets/python.json         - Python preset
-config/presets/typescript.json     - TypeScript preset
-TEST-PLAN.md                       - Manual test plan
-```
-
-### Tests Added
-- file-classifier.test.ts (38 tests)
-- project-detector.test.ts (25 tests)
-- prd/parser.test.ts (22 tests)
-
----
-
-## Notes for Next Instance
-
-1. **173 tests passing** - Run `npm test -- --run` to verify
-
-2. **All major modules created** - Project detection, file classification, PRD parsing all functional
-
-3. **Integration pending** - Presets and smart test filter need to be wired into main logic
-
-4. **User vision:** Autonomous senior dev mode - PRD foundation is ready
-
-5. **Feature list format:** Using Anthropic autonomous-coding format in feature_list.json
-
----
-
-## Contact Points
-
-- **Progress files:** `progress/` directory
-- **Config:** `config/default.json`
-- **Presets:** `config/presets/`
-- **Hooks:** `hooks/hooks.json`
-- **Main logic:** `src/index.ts`
-- **Installer:** `scripts/install.js`
-- **Test Plan:** `TEST-PLAN.md`
-- **Feature List:** `feature_list.json`
+- All 173 automated tests passing
+- Manual testing verifies real-world behavior
+- PRD foundation ready for "autonomous senior dev" vision
+- File at: `progress/NEXT-SESSION.md`
