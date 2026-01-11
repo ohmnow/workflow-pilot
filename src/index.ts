@@ -19,6 +19,7 @@ import { buildContext } from './analyzer/context-builder.js';
 import { analyzeWithAI } from './analyzer/ai-analyzer.js';
 import { evaluateRules } from './rules/index.js';
 import { formatSuggestion } from './output/suggestion-formatter.js';
+import { writeStatusFile } from './output/status-writer.js';
 
 interface HookInput {
   session_id: string;
@@ -96,6 +97,9 @@ async function main(): Promise<void> {
     if (DEBUG) {
       console.error('[WP Debug] Total suggestions:', allSuggestions.length);
     }
+
+    // Write status file for status line integration
+    writeStatusFile(context, allSuggestions, input.session_id);
 
     // Always output status to stderr for visibility
     const displayTime = new Date().toLocaleTimeString();
