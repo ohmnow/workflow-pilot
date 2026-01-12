@@ -106,7 +106,7 @@
           "name": "CI Gate Checker",
           "description": "Check if PR passes all required CI checks",
           "blocking": true,
-          "status": "pending",
+          "status": "complete",
           "dependsOn": ["T2-005"],
           "acceptance": [
             "checkPRStatus(prNumber) returns pass/fail/pending",

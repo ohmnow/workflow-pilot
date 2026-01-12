@@ -16,6 +16,7 @@ export * from './workflow-generator.js';
 export * from './context-extractor.js';
 export * from './claude-runner.js';
 export * from './scope-guardrails.js';
+export * from './ci-gate-checker.js';
 
 // Convenience function to check GitHub availability
 import { isGitHubAvailable } from './client.js';
