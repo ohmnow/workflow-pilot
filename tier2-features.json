@@ -119,7 +119,7 @@
           "name": "Configurable Auto-Merge",
           "description": "Auto-merge PRs based on project config",
           "blocking": false,
-          "status": "pending",
+          "status": "complete",
           "dependsOn": ["T2-007", "T2-001"],
           "acceptance": [
             "If prStrategy='auto': merge when CI passes",
@@ -133,7 +133,7 @@
           "name": "Feature List Sync on Merge",
           "description": "Update feature_list.json when worker PR merges",
           "blocking": false,
-          "status": "pending",
+          "status": "complete",
           "dependsOn": ["T2-008"],
           "acceptance": [
             "Webhook or polling detects merged PRs",
