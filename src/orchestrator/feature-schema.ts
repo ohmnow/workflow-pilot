@@ -82,6 +82,14 @@ export interface Feature {
 
   /** Notes from development */
   notes?: string;
+
+  // GitHub integration (optional)
+  /** Linked GitHub issue number */
+  githubIssue?: number;
+  /** Linked GitHub PR number */
+  githubPR?: number;
+  /** Feature branch name */
+  githubBranch?: string;
 }
 
 /**

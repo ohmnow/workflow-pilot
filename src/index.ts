@@ -202,7 +202,7 @@ async function main(): Promise<void> {
     let orchestratorContext: string | undefined;
     if (isOrchestratorMode()) {
       if (input.hook_event_name === 'UserPromptSubmit' && input.prompt) {
-        const orchResult = handleOrchestratorPrompt(input.prompt);
+        const orchResult = await handleOrchestratorPrompt(input.prompt);
 
         // Show user message if any
         if (orchResult.userMessage) {

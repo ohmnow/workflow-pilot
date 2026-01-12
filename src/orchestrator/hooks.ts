@@ -30,6 +30,10 @@ import {
   getParallelizableFeatures,
   Feature,
 } from './feature-schema.js';
+import {
+  getGitHubHookContext,
+  getGitHubSetupPrompt,
+} from './github-hooks.js';
 
 /**
  * Result from orchestrator hook processing
@@ -54,10 +58,10 @@ export interface OrchestratorHookResult {
 /**
  * Handle UserPromptSubmit for orchestrator mode
  */
-export function handleUserPromptSubmit(
+export async function handleUserPromptSubmit(
   prompt: string,
   projectDir: string = process.cwd()
-): OrchestratorHookResult {
+): Promise<OrchestratorHookResult> {
   const context = getOrchestratorContext(projectDir);
 
   if (!context.enabled) {
@@ -70,7 +74,17 @@ export function handleUserPromptSubmit(
   }
 
   // Existing project - provide phase-appropriate guidance
-  return handlePhaseGuidance(prompt, context, projectDir);
+  const result = await handlePhaseGuidance(prompt, context, projectDir);
+
+  // Add GitHub context if available
+  const githubContext = await getGitHubHookContext(projectDir);
+  if (githubContext.contextInjection && result.contextInjection) {
+    result.contextInjection += '\n' + githubContext.contextInjection;
+  } else if (githubContext.contextInjection) {
+    result.contextInjection = githubContext.contextInjection;
+  }
+
+  return result;
 }
 
 /**
@@ -122,11 +136,11 @@ User's initial request: "${prompt}"
 /**
  * Handle phase-specific guidance
  */
-function handlePhaseGuidance(
+async function handlePhaseGuidance(
   prompt: string,
   context: OrchestratorContext,
   projectDir: string
-): OrchestratorHookResult {
+): Promise<OrchestratorHookResult> {
   if (!context.state) {
     return {};
   }
@@ -155,6 +169,8 @@ function handlePhaseGuidance(
 - Install dependencies
 - Make initial commit
 
+**GitHub Integration Available**: Ask if the user wants to create a GitHub repository for professional workflow tracking.
+
 When complete, transition to 'planning' phase.
 `;
       break;
@@ -168,6 +184,8 @@ Key elements for feature_list.json:
 - Group features by sprint
 - Mark blocking dependencies
 - Add acceptance criteria for verification
+
+**GitHub**: After creating the feature list, offer to create GitHub issues for each feature.
 `;
       break;
 

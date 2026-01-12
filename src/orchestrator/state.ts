@@ -14,6 +14,22 @@ import { DevelopmentPhase } from './phases.js';
 import { FeatureList } from './feature-schema.js';
 
 /**
+ * GitHub integration state
+ */
+export interface GitHubState {
+  /** Repository owner (username or org) */
+  repoOwner: string;
+  /** Repository name */
+  repoName: string;
+  /** GitHub integration is initialized */
+  initialized: boolean;
+  /** Whether issues have been created for features */
+  issuesCreated: boolean;
+  /** Last sync timestamp */
+  lastSync?: string;
+}
+
+/**
  * Orchestrator state persisted to .workflow-pilot-orchestrator.json
  */
 export interface OrchestratorState {
@@ -40,6 +56,9 @@ export interface OrchestratorState {
     count: number;
     lastSessionAt: string;
   };
+
+  /** GitHub integration (optional) */
+  github?: GitHubState;
 
   /** Timestamps */
   createdAt: string;
