@@ -117,8 +117,10 @@ Implement user authentication with JWT tokens.
       const issue = createIssue();
       const context = extractWorkerContext(issue);
 
-      expect(context.scopeInstructions).toContain('Focus exclusively');
-      expect(context.scopeInstructions).toContain('Do NOT modify');
+      // New guardrails format
+      expect(context.scopeInstructions).toContain('SCOPE GUARDRAILS');
+      expect(context.scopeInstructions).toContain('Stay focused');
+      expect(context.scopeInstructions).toContain('Protected Files');
     });
 
     it('should handle minimal issue body', () => {

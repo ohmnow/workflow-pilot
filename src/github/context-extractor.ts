@@ -9,6 +9,13 @@ import { GitHubIssue } from './client.js';
 import { Feature } from '../orchestrator/feature-schema.js';
 import { GitHubFeature } from './issue-manager.js';
 import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../orchestrator/autopilot-config.js';
+import {
+  ScopeGuardrails,
+  loadScopeGuardrailsFromClaudeMd,
+  buildScopeGuardrails,
+  generateScopeInstructions as generateGuardrailInstructions,
+  DEFAULT_SCOPE_GUARDRAILS,
+} from './scope-guardrails.js';
 
 /**
  * Structured context for Claude worker
@@ -39,11 +46,22 @@ export interface ExtractedContext {
 }
 
 /**
+ * Options for context extraction
+ */
+export interface ExtractContextOptions {
+  /** Project directory (for loading CLAUDE.md guardrails) */
+  projectDir?: string;
+  /** Custom guardrails to use instead of loading from CLAUDE.md */
+  customGuardrails?: ScopeGuardrails;
+}
+
+/**
  * Extract worker context from a GitHub issue
  */
 export function extractWorkerContext(
   issue: GitHubIssue,
-  config: AutopilotConfig = DEFAULT_AUTOPILOT_CONFIG
+  config: AutopilotConfig = DEFAULT_AUTOPILOT_CONFIG,
+  options: ExtractContextOptions = {}
 ): ExtractedContext {
   const body = issue.body || '';
 
@@ -55,6 +73,11 @@ export function extractWorkerContext(
 
   // Parse sections from issue body
   const sections = parseIssueSections(body);
+
+  // Build scope guardrails
+  const guardrails = options.customGuardrails
+    ? options.customGuardrails
+    : buildGuardrailsForFeature(featureId, options.projectDir);
 
   // Helper to use fallback when section is undefined or empty
   const useOrFallback = <T>(sectionValue: T[] | undefined, fallback: T[]): T[] =>
@@ -70,9 +93,23 @@ export function extractWorkerContext(
     relatedFiles: useOrFallback(sections.relatedFiles, extractRelatedFiles(body)),
     dependencies: useOrFallback(sections.dependencies, extractDependencies(body)),
     branchName,
-    scopeInstructions: generateScopeInstructions(featureId, sections.scope),
+    scopeInstructions: generateGuardrailInstructions(featureId, guardrails),
     notes: sections.notes || [],
   };
+}
+
+/**
+ * Build guardrails for a specific feature
+ */
+function buildGuardrailsForFeature(
+  featureId: string | undefined,
+  projectDir?: string
+): ScopeGuardrails {
+  // Try to load from CLAUDE.md
+  const projectConfig = loadScopeGuardrailsFromClaudeMd(projectDir);
+
+  // Build feature-specific guardrails
+  return buildScopeGuardrails(featureId, projectConfig);
 }
 
 /**
@@ -80,13 +117,19 @@ export function extractWorkerContext(
  */
 export function extractContextFromFeature(
   feature: GitHubFeature,
-  config: AutopilotConfig = DEFAULT_AUTOPILOT_CONFIG
+  config: AutopilotConfig = DEFAULT_AUTOPILOT_CONFIG,
+  options: ExtractContextOptions = {}
 ): ExtractedContext {
   const branchPattern = config.branchPattern || 'claude-worker/{feature-id}';
   const branchName = branchPattern.replace(
     '{feature-id}',
     feature.id.toLowerCase().replace(/[^a-z0-9-]/g, '-')
   );
+
+  // Build scope guardrails
+  const guardrails = options.customGuardrails
+    ? options.customGuardrails
+    : buildGuardrailsForFeature(feature.id, options.projectDir);
 
   return {
     issueNumber: feature.githubIssue || 0,
@@ -98,7 +141,7 @@ export function extractContextFromFeature(
     relatedFiles: [], // Would need codebase analysis
     dependencies: feature.dependsOn,
     branchName,
-    scopeInstructions: generateScopeInstructions(feature.id),
+    scopeInstructions: generateGuardrailInstructions(feature.id, guardrails),
     notes: feature.notes ? [feature.notes] : [],
   };
 }
@@ -457,34 +500,6 @@ function extractDependencies(body: string): string[] {
   return [...new Set(deps)]; // Deduplicate
 }
 
-/**
- * Generate scope instructions for worker
- */
-function generateScopeInstructions(featureId?: string, customScope?: string): string {
-  const instructions: string[] = [];
-
-  instructions.push('**IMPORTANT: Worker Scope Limitations**');
-  instructions.push('');
-
-  if (featureId) {
-    instructions.push(`You are working ONLY on feature ${featureId}.`);
-  }
-
-  instructions.push('- Focus exclusively on the task described in this issue');
-  instructions.push('- Do NOT modify files unrelated to this feature');
-  instructions.push('- Do NOT refactor or "improve" code outside the scope');
-  instructions.push('- Do NOT modify configuration files unless required');
-  instructions.push('- Do NOT modify feature_list.json or orchestrator state');
-  instructions.push('- Keep changes minimal and focused');
-
-  if (customScope) {
-    instructions.push('');
-    instructions.push('**Additional Scope Notes:**');
-    instructions.push(customScope);
-  }
-
-  return instructions.join('\n');
-}
 
 /**
  * Validate extracted context has minimum required information

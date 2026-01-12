@@ -85,8 +85,8 @@
           "id": "T2-006",
           "name": "Worker Scope Guardrails",
           "description": "Limit what files/actions a worker can modify",
-          "blocking": false,
-          "status": "pending",
+          "blocking": true,
+          "status": "complete",
           "dependsOn": ["T2-005"],
           "acceptance": [
             "Worker prompt includes explicit scope limitations",
