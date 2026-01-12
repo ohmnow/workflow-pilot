@@ -345,7 +345,8 @@ export function handlePreToolUse(
     const blockedBy = currentFeature.dependsOn
       .filter(depId => {
         const dep = context.featureList!.features.find(f => f.id === depId);
-        return dep && dep.blocking && !dep.passes;
+        // Include if: dependency doesn't exist (missing), OR is blocking and not passed
+        return !dep || (dep.blocking && !dep.passes);
       })
       .join(', ');
 

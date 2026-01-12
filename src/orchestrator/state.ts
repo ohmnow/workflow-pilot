@@ -100,6 +100,9 @@ export function getStateFilePath(projectDir: string = process.cwd()): string {
 
 /**
  * Load orchestrator state from disk
+ *
+ * Note: This function only reads state without modifying it.
+ * Use startNewSession() to increment session count and persist.
  */
 export function loadState(projectDir: string = process.cwd()): OrchestratorState | null {
   const statePath = getStateFilePath(projectDir);
@@ -112,15 +115,31 @@ export function loadState(projectDir: string = process.cwd()): OrchestratorState
     const content = fs.readFileSync(statePath, 'utf-8');
     const state = JSON.parse(content) as OrchestratorState;
 
-    // Update session tracking on load
-    state.sessions.count += 1;
-    state.sessions.lastSessionAt = new Date().toISOString();
-    state.updatedAt = new Date().toISOString();
-
     return state;
   } catch {
     return null;
   }
+}
+
+/**
+ * Start a new session - increments session count and persists
+ *
+ * Call this once at the beginning of a new Claude session,
+ * not on every hook invocation.
+ */
+export function startNewSession(projectDir: string = process.cwd()): OrchestratorState | null {
+  const state = loadState(projectDir);
+
+  if (!state) {
+    return null;
+  }
+
+  state.sessions.count += 1;
+  state.sessions.lastSessionAt = new Date().toISOString();
+  state.updatedAt = new Date().toISOString();
+
+  saveState(state, projectDir);
+  return state;
 }
 
 /**
