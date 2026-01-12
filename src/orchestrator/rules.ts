@@ -79,7 +79,8 @@ const orchestratorRules: OrchestratorRule[] = [
       const blockedBy = feature.dependsOn
         .filter(depId => {
           const dep = orchCtx.featureList?.features.find(f => f.id === depId);
-          return dep && dep.blocking && !dep.passes;
+          // Include if: dependency doesn't exist (missing), OR is blocking and not passed
+          return !dep || (dep.blocking && !dep.passes);
         });
 
       return `Feature "${feature.name}" is blocked. Complete these first: ${blockedBy.join(', ')}`;

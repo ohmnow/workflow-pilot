@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DevelopmentPhase } from './phases.js';
 import { FeatureList } from './feature-schema.js';
+import { AutopilotConfig, loadAutopilotConfig } from './autopilot-config.js';
 
 /**
  * GitHub integration state
@@ -60,6 +61,9 @@ export interface OrchestratorState {
   /** GitHub integration (optional) */
   github?: GitHubState;
 
+  /** Autopilot configuration (optional) */
+  autopilot?: AutopilotConfig;
+
   /** Timestamps */
   createdAt: string;
   updatedAt: string;
@@ -96,6 +100,9 @@ export function getStateFilePath(projectDir: string = process.cwd()): string {
 
 /**
  * Load orchestrator state from disk
+ *
+ * Note: This function only reads state without modifying it.
+ * Use startNewSession() to increment session count and persist.
  */
 export function loadState(projectDir: string = process.cwd()): OrchestratorState | null {
   const statePath = getStateFilePath(projectDir);
@@ -108,15 +115,31 @@ export function loadState(projectDir: string = process.cwd()): OrchestratorState
     const content = fs.readFileSync(statePath, 'utf-8');
     const state = JSON.parse(content) as OrchestratorState;
 
-    // Update session tracking on load
-    state.sessions.count += 1;
-    state.sessions.lastSessionAt = new Date().toISOString();
-    state.updatedAt = new Date().toISOString();
-
     return state;
   } catch {
     return null;
   }
+}
+
+/**
+ * Start a new session - increments session count and persists
+ *
+ * Call this once at the beginning of a new Claude session,
+ * not on every hook invocation.
+ */
+export function startNewSession(projectDir: string = process.cwd()): OrchestratorState | null {
+  const state = loadState(projectDir);
+
+  if (!state) {
+    return null;
+  }
+
+  state.sessions.count += 1;
+  state.sessions.lastSessionAt = new Date().toISOString();
+  state.updatedAt = new Date().toISOString();
+
+  saveState(state, projectDir);
+  return state;
 }
 
 /**
@@ -295,4 +318,30 @@ export function advanceSprint(
   if (!state) return null;
 
   return updateState({ currentSprint: state.currentSprint + 1 }, projectDir);
+}
+
+/**
+ * Get autopilot configuration for a project
+ *
+ * Merges config from:
+ * 1. Default values
+ * 2. Project config files (.workflow-pilot.json, feature_list.json)
+ * 3. Orchestrator state (if overridden)
+ */
+export function getAutopilotConfig(
+  projectDir: string = process.cwd()
+): AutopilotConfig {
+  // Load from config files (with defaults)
+  const fileConfig = loadAutopilotConfig(projectDir);
+
+  // Check if state has override
+  const state = loadState(projectDir);
+  if (state?.autopilot) {
+    return {
+      ...fileConfig,
+      ...state.autopilot,
+    };
+  }
+
+  return fileConfig;
 }

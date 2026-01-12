@@ -16,6 +16,7 @@
 export * from './phases.js';
 export * from './feature-schema.js';
 export * from './state.js';
+export * from './autopilot-config.js';
 
 import { getMode } from '../config/loader.js';
 import {

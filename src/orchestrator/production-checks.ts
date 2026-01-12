@@ -68,13 +68,15 @@ const productionChecks: ProductionCheck[] = [
     description: 'Ensure no API keys, passwords, or tokens in source code',
     automated: true,
     check: async (projectDir) => {
+      // Note: No global flag (g) - using test() with global regex causes
+      // lastIndex to persist between calls, potentially missing matches
       const secretPatterns = [
-        /api[_-]?key\s*[:=]\s*['"][a-zA-Z0-9]{20,}['"]/gi,
-        /password\s*[:=]\s*['"][^'"]+['"]/gi,
-        /secret\s*[:=]\s*['"][^'"]+['"]/gi,
-        /sk[-_]live[-_][a-zA-Z0-9]+/g,
-        /ghp_[a-zA-Z0-9]{36}/g,
-        /xox[baprs]-[a-zA-Z0-9-]+/g,
+        /api[_-]?key\s*[:=]\s*['"][a-zA-Z0-9]{20,}['"]/i,
+        /password\s*[:=]\s*['"][^'"]+['"]/i,
+        /secret\s*[:=]\s*['"][^'"]+['"]/i,
+        /sk[-_]live[-_][a-zA-Z0-9]+/,
+        /ghp_[a-zA-Z0-9]{36}/,
+        /xox[baprs]-[a-zA-Z0-9-]+/,
       ];
 
       const filesToCheck = findSourceFiles(projectDir);
