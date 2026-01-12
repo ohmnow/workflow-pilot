@@ -37,6 +37,7 @@ export interface WorkerContext {
   relatedFiles?: string[];
   scope: string;
   branchName: string;
+  issueNumber: number;
 }
 
 /**
@@ -136,6 +137,7 @@ export function generateWorkerContext(
     relatedFiles: [], // To be populated by caller with codebase analysis
     scope: `This worker is scoped to feature ${feature.id} only. Do not modify unrelated files.`,
     branchName,
+    issueNumber: feature.githubIssue || 0,
   };
 }
 
@@ -187,7 +189,7 @@ export function formatWorkerContextMarkdown(context: WorkerContext): string {
   sections.push('1. Create the branch specified above');
   sections.push('2. Implement the feature according to acceptance criteria');
   sections.push('3. Write tests for new functionality');
-  sections.push('4. Create a PR with `Fixes #' + 'ISSUE_NUMBER` in the description');
+  sections.push(`4. Create a PR with \`Fixes #${context.issueNumber}\` in the description`);
   sections.push('');
 
   return sections.join('\n');

@@ -398,13 +398,22 @@ See commit history for details.
 
 Fixes #${ISSUE_NUMBER}"
 
-    PR_URL=$(gh pr create \
+    local pr_output
+    local pr_exit_code
+
+    pr_output=$(gh pr create \
         --title "feat: ${ISSUE_TITLE}" \
         --body "$PR_BODY" \
         --base "$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')" \
-        --head "$BRANCH_NAME" \
-        2>&1)
+        --head "$BRANCH_NAME" 2>&1)
+    pr_exit_code=$?
 
+    if [[ $pr_exit_code -ne 0 ]]; then
+        log_error "Failed to create PR: $pr_output"
+        exit 1
+    fi
+
+    PR_URL="$pr_output"
     log_success "PR created: $PR_URL"
 
     # Comment on the issue
