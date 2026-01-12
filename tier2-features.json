@@ -1,0 +1,157 @@
+{
+  "project": "Workflow Pilot - Tier 2: Autopilot",
+  "version": "0.4.0",
+  "sprints": [
+    {
+      "id": "sprint-1",
+      "name": "Foundation",
+      "description": "Core infrastructure for distributed Claude workers",
+      "features": [
+        {
+          "id": "T2-001",
+          "name": "Autopilot Configuration Schema",
+          "description": "Add autopilot settings to project config (PR strategy, worker limits, etc.)",
+          "blocking": true,
+          "status": "complete",
+          "acceptance": [
+            "AutopilotConfig type defined in config schema",
+            "Default values: prStrategy='review', maxWorkers=3, autoLabel=false",
+            "Config can be read from feature_list.json or .workflow-pilot.json"
+          ]
+        },
+        {
+          "id": "T2-002",
+          "name": "Issue Labeling System",
+          "description": "Orchestrator can label non-blocking issues as 'ready-for-claude'",
+          "blocking": true,
+          "status": "complete",
+          "dependsOn": ["T2-001"],
+          "acceptance": [
+            "labelIssueForWorker(issueNumber) adds 'ready-for-claude' label",
+            "Only non-blocking features with no pending dependencies can be labeled",
+            "Labeled issues include worker context in body"
+          ]
+        },
+        {
+          "id": "T2-003",
+          "name": "GitHub Actions Workflow Template",
+          "description": "Generate .github/workflows/claude-worker.yml for repos",
+          "blocking": true,
+          "status": "complete",
+          "dependsOn": ["T2-001"],
+          "acceptance": [
+            "generateWorkerWorkflow() creates valid YAML",
+            "Triggers on issues.labeled event with 'ready-for-claude'",
+            "Uses ubuntu-latest runner with Node.js",
+            "Includes ANTHROPIC_API_KEY secret reference",
+            "Workflow installs Claude Code CLI"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-2",
+      "name": "Worker Infrastructure",
+      "description": "Headless Claude sessions with issue context",
+      "features": [
+        {
+          "id": "T2-004",
+          "name": "Issue Context Extractor",
+          "description": "Extract actionable context from GitHub issue for worker",
+          "blocking": true,
+          "status": "pending",
+          "dependsOn": ["T2-002"],
+          "acceptance": [
+            "extractWorkerContext(issue) returns structured prompt",
+            "Includes: feature requirements, acceptance criteria, related files",
+            "Context is injected into Claude's initial prompt"
+          ]
+        },
+        {
+          "id": "T2-005",
+          "name": "Headless Claude Runner Script",
+          "description": "Bash/Node script to run Claude Code non-interactively in CI",
+          "blocking": true,
+          "status": "pending",
+          "dependsOn": ["T2-003", "T2-004"],
+          "acceptance": [
+            "scripts/claude-worker.sh runs Claude with --print flag",
+            "Accepts issue number as argument",
+            "Creates branch, commits changes, opens PR",
+            "Links PR to issue with 'Fixes #N' syntax"
+          ]
+        },
+        {
+          "id": "T2-006",
+          "name": "Worker Scope Guardrails",
+          "description": "Limit what files/actions a worker can modify",
+          "blocking": false,
+          "status": "pending",
+          "dependsOn": ["T2-005"],
+          "acceptance": [
+            "Worker prompt includes explicit scope limitations",
+            "CLAUDE.md can define allowed paths per feature",
+            "Workers cannot modify feature_list.json directly"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-3",
+      "name": "Merge & Sync",
+      "description": "Auto-merge with CI gates and state synchronization",
+      "features": [
+        {
+          "id": "T2-007",
+          "name": "CI Gate Checker",
+          "description": "Check if PR passes all required CI checks",
+          "blocking": true,
+          "status": "pending",
+          "dependsOn": ["T2-005"],
+          "acceptance": [
+            "checkPRStatus(prNumber) returns pass/fail/pending",
+            "Respects branch protection rules",
+            "Can be polled or webhook-triggered"
+          ]
+        },
+        {
+          "id": "T2-008",
+          "name": "Configurable Auto-Merge",
+          "description": "Auto-merge PRs based on project config",
+          "blocking": false,
+          "status": "pending",
+          "dependsOn": ["T2-007", "T2-001"],
+          "acceptance": [
+            "If prStrategy='auto': merge when CI passes",
+            "If prStrategy='review': add 'ready-for-review' label",
+            "If prStrategy='manual': do nothing",
+            "Uses gh pr merge --auto when enabled"
+          ]
+        },
+        {
+          "id": "T2-009",
+          "name": "Feature List Sync on Merge",
+          "description": "Update feature_list.json when worker PR merges",
+          "blocking": false,
+          "status": "pending",
+          "dependsOn": ["T2-008"],
+          "acceptance": [
+            "Webhook or polling detects merged PRs",
+            "Parses 'Fixes #N' to find feature",
+            "Marks feature as 'complete' in feature_list.json",
+            "Commits updated file to main branch"
+          ]
+        }
+      ]
+    }
+  ],
+  "config": {
+    "autopilot": {
+      "prStrategy": "review",
+      "maxConcurrentWorkers": 3,
+      "autoLabelNonBlocking": false,
+      "workerTimeout": "30m",
+      "requiredChecks": ["test", "build"]
+    }
+  }
+}

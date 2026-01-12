@@ -11,6 +11,8 @@ export * from './repo-manager.js';
 export * from './issue-manager.js';
 export * from './pr-manager.js';
 export * from './release-manager.js';
+export * from './worker-labeler.js';
+export * from './workflow-generator.js';
 
 // Convenience function to check GitHub availability
 import { isGitHubAvailable } from './client.js';

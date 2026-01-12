@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DevelopmentPhase } from './phases.js';
 import { FeatureList } from './feature-schema.js';
+import { AutopilotConfig, loadAutopilotConfig } from './autopilot-config.js';
 
 /**
  * GitHub integration state
@@ -59,6 +60,9 @@ export interface OrchestratorState {
 
   /** GitHub integration (optional) */
   github?: GitHubState;
+
+  /** Autopilot configuration (optional) */
+  autopilot?: AutopilotConfig;
 
   /** Timestamps */
   createdAt: string;
@@ -295,4 +299,30 @@ export function advanceSprint(
   if (!state) return null;
 
   return updateState({ currentSprint: state.currentSprint + 1 }, projectDir);
+}
+
+/**
+ * Get autopilot configuration for a project
+ *
+ * Merges config from:
+ * 1. Default values
+ * 2. Project config files (.workflow-pilot.json, feature_list.json)
+ * 3. Orchestrator state (if overridden)
+ */
+export function getAutopilotConfig(
+  projectDir: string = process.cwd()
+): AutopilotConfig {
+  // Load from config files (with defaults)
+  const fileConfig = loadAutopilotConfig(projectDir);
+
+  // Check if state has override
+  const state = loadState(projectDir);
+  if (state?.autopilot) {
+    return {
+      ...fileConfig,
+      ...state.autopilot,
+    };
+  }
+
+  return fileConfig;
 }
