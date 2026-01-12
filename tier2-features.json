@@ -59,7 +59,7 @@
           "name": "Issue Context Extractor",
           "description": "Extract actionable context from GitHub issue for worker",
           "blocking": true,
-          "status": "pending",
+          "status": "complete",
           "dependsOn": ["T2-002"],
           "acceptance": [
             "extractWorkerContext(issue) returns structured prompt",
@@ -72,7 +72,7 @@
           "name": "Headless Claude Runner Script",
           "description": "Bash/Node script to run Claude Code non-interactively in CI",
           "blocking": true,
-          "status": "pending",
+          "status": "complete",
           "dependsOn": ["T2-003", "T2-004"],
           "acceptance": [
             "scripts/claude-worker.sh runs Claude with --print flag",
