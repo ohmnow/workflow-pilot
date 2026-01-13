@@ -1,0 +1,91 @@
+{
+  "project": "Workflow Pilot - Tier 3: Operational Observability",
+  "version": "0.5.0",
+  "sprints": [
+    {
+      "id": "sprint-1",
+      "name": "Event Foundation",
+      "description": "Core event system for capturing what's happening",
+      "features": [
+        {
+          "id": "T3-001",
+          "name": "Event Logger",
+          "description": "Foundation for all observability - capture events to JSON file",
+          "blocking": true,
+          "status": "complete",
+          "acceptance": [
+            "EventLogger class with log(event) and query(filter) methods",
+            "Events stored in .workflow-pilot-events.json",
+            "Worker events: worker.start, worker.complete, worker.fail, worker.timeout",
+            "PR events: pr.created, pr.ci_pass, pr.ci_fail, pr.merged",
+            "Each event has: type, timestamp, data (context-specific)",
+            "Auto-rotate/trim events older than 30 days"
+          ]
+        },
+        {
+          "id": "T3-002",
+          "name": "Status Command",
+          "description": "Quick operational overview from terminal",
+          "blocking": false,
+          "status": "pending",
+          "dependsOn": ["T3-001"],
+          "acceptance": [
+            "CLI function to display current state",
+            "Shows: active workers (count), pending PRs, last 5 events",
+            "Output format: clean, scannable terminal output",
+            "Reads from event log file"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-2",
+      "name": "Smart Notifications",
+      "description": "Notify only when human intervention is needed",
+      "features": [
+        {
+          "id": "T3-003",
+          "name": "Exception Notifier",
+          "description": "Post GitHub comments when things need human attention",
+          "blocking": false,
+          "status": "pending",
+          "dependsOn": ["T3-001"],
+          "acceptance": [
+            "Post GitHub comment on issue when worker fails (includes error context)",
+            "Post GitHub comment when PR needs human review (review strategy only)",
+            "Post sprint summary comment when all sprint features complete",
+            "Configurable in AutopilotConfig: notifications.workerFailure, etc.",
+            "Throttle: max 1 notification per issue per hour (avoid spam)"
+          ]
+        },
+        {
+          "id": "T3-004",
+          "name": "Stuck Detection",
+          "description": "Detect and alert when progress stalls",
+          "blocking": false,
+          "status": "pending",
+          "dependsOn": ["T3-001", "T3-003"],
+          "acceptance": [
+            "Detect worker stuck: no events for >30min after start",
+            "Detect PR stuck: CI pending for >1hr, or no activity for >24hr",
+            "Post GitHub comment with diagnostic info and suggested actions",
+            "Configurable thresholds in AutopilotConfig"
+          ]
+        }
+      ]
+    }
+  ],
+  "config": {
+    "notifications": {
+      "enabled": true,
+      "workerFailure": true,
+      "prNeedsReview": true,
+      "sprintComplete": true,
+      "stuckThresholds": {
+        "workerMinutes": 30,
+        "prCIMinutes": 60,
+        "prIdleHours": 24
+      }
+    }
+  }
+}
