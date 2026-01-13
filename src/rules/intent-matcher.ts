@@ -101,30 +101,9 @@ const DESTRUCTIVE_ACTIONS = [
   'drop database',
   'drop table',
   'truncate',
+  'wipe',         // Now safe: word boundary matching prevents "swipe" matching
 ];
 
-// Words that need explicit word boundary matching AND destructive context
-// e.g., "wipe" should not match "swipe" or "wipe your hands"
-const DESTRUCTIVE_WORDS_REQUIRING_CONTEXT = [
-  'wipe',
-];
-
-// Context words that make "wipe" destructive
-const DESTRUCTIVE_CONTEXT_WORDS = [
-  'database',
-  'data',
-  'disk',
-  'drive',
-  'storage',
-  'all',
-  'everything',
-  'clean',
-  'system',
-  'server',
-  'production',
-  'files',
-  'content',
-];
 
 // Words that indicate code content (for detecting secrets in code)
 const CODE_CONTENT_INDICATORS = [
@@ -201,19 +180,25 @@ function extractGitCommandArgs(command: string): string {
 }
 
 /**
- * Check if text contains a word/phrase (word boundary aware for short terms)
+ * Check if text contains a word/phrase
+ *
+ * Uses word boundary matching for pure alphanumeric words to avoid false positives
+ * e.g., "token" should not match "tokenize", "secret" should not match "secretary"
+ *
+ * Uses substring matching for patterns with special chars (.env, --force, api-key)
+ * which are specific enough to not have false positive issues
  */
 function containsWord(text: string, word: string): boolean {
   const normalizedText = normalize(text);
   const normalizedWord = normalize(word);
 
-  // For short words (<=3 chars), use word boundary matching
-  if (normalizedWord.length <= 3) {
+  // Pure alphanumeric words: use word boundary matching to avoid false positives
+  if (/^[a-z0-9]+$/i.test(normalizedWord)) {
     const regex = new RegExp(`\\b${escapeRegex(normalizedWord)}\\b`, 'i');
     return regex.test(normalizedText);
   }
 
-  // For longer words/phrases, simple includes is fine
+  // Patterns with special chars (.env, --force, api-key): use substring matching
   return normalizedText.includes(normalizedWord);
 }
 
@@ -236,29 +221,6 @@ function findMatchingWord(text: string, words: string[]): string | null {
   return null;
 }
 
-/**
- * Check if text contains a word using strict word boundary matching
- * Used for words that commonly appear as substrings of other words
- * e.g., "wipe" in "swipe"
- */
-function containsWordBoundary(text: string, word: string): boolean {
-  const normalizedText = normalize(text);
-  const normalizedWord = normalize(word);
-  const regex = new RegExp(`\\b${escapeRegex(normalizedWord)}\\b`, 'i');
-  return regex.test(normalizedText);
-}
-
-/**
- * Find matching word that requires strict boundary matching
- */
-function findMatchingWordBoundary(text: string, words: string[]): string | null {
-  for (const word of words) {
-    if (containsWordBoundary(text, word)) {
-      return word;
-    }
-  }
-  return null;
-}
 
 /**
  * Check if text contains a safe template file pattern
@@ -298,23 +260,6 @@ export function matchIntent(text: string, context?: {
       matchedTarget: '',
       reasoning: `Detected destructive action: "${destructiveAction}"`,
     };
-  }
-
-  // 1b. Check for words requiring strict word boundary AND destructive context
-  // e.g., "wipe the database" triggers but "wipe your hands" does not
-  const boundaryWord = findMatchingWordBoundary(normalizedText, DESTRUCTIVE_WORDS_REQUIRING_CONTEXT);
-  if (boundaryWord) {
-    // Also need a destructive context word
-    const contextWord = findMatchingWord(normalizedText, DESTRUCTIVE_CONTEXT_WORDS);
-    if (contextWord) {
-      return {
-        type: 'destructive-operation',
-        confidence: 0.85,
-        matchedAction: boundaryWord,
-        matchedTarget: contextWord,
-        reasoning: `Detected destructive action: "${boundaryWord}" with context "${contextWord}"`,
-      };
-    }
   }
 
   // 2. Check for committing secrets (action + sensitive target)
