@@ -48,6 +48,8 @@ describe('Intent Matcher', () => {
       'git add .env.template',         // Template file is safe
       'commit .env.example',           // Template file is safe
       'git add config.example.json',   // Template file is safe
+      'Co-Authored-By: Claude',        // "auth" in "Author" should not trigger
+      'git commit by author',          // "auth" substring in "author"
     ];
 
     it.each(shouldNotMatch)('should NOT detect: "%s"', (phrase) => {

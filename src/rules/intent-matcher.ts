@@ -46,7 +46,8 @@ const SENSITIVE_TARGETS = [
   'api-key',
   'token',
   'tokens',
-  'auth',
+  'auth key',        // More specific than just "auth" to avoid "author", "authorization"
+  'auth token',
   'authentication',
   // Keys and certificates
   'private key',
