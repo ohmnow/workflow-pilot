@@ -67,7 +67,10 @@ describe('Intent Matcher', () => {
       'git reset --hard',
       'reset hard to origin',
       'rm -rf /',
-      'wipe the database',
+      'wipe the database',        // Contains "wipe database"
+      'wipe all the data',        // Contains "wipe all"
+      'wipe everything now',      // Contains "wipe everything"
+      'wipe data from disk',      // Contains "wipe data"
       'drop database production',
     ];
 
@@ -75,6 +78,22 @@ describe('Intent Matcher', () => {
       const result = matchIntent(phrase);
       expect(result).not.toBeNull();
       expect(result?.type).toBe('destructive-operation');
+    });
+
+    // These should NOT trigger (false positive prevention)
+    const shouldNotMatch = [
+      'swipe from left to right',        // UI gesture, "swipe" should not match "wipe data"
+      'swipe navigation not working',    // UI discussion
+      'implement swipe to delete',       // Feature request mentioning swipe
+      'the swipe gesture is buggy',      // Bug report about UI
+      'add swipe support',               // Feature request
+      'wipe your hands',                 // Not destructive context
+    ];
+
+    it.each(shouldNotMatch)('should NOT detect: "%s"', (phrase) => {
+      const result = matchIntent(phrase);
+      // Should not match destructive-operation
+      expect(result?.type).not.toBe('destructive-operation');
     });
   });
 
