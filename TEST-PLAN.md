@@ -1,4 +1,4 @@
-# Workflow Pilot - Test Plan
+# Claude Hero - Test Plan
 
 **Version:** 0.7.0
 **Date:** 2026-01-11
@@ -24,24 +24,24 @@
 
 ### 1. Project Config Loading
 
-#### Test 1.1: Load .workflow-pilot.json from project root
+#### Test 1.1: Load .claude-hero.json from project root
 ```bash
 # Setup
-echo '{"mode": "minimal"}' > .workflow-pilot.json
-export WORKFLOW_PILOT_DEBUG=1
+echo '{"mode": "minimal"}' > .claude-hero.json
+export CLAUDE_HERO_DEBUG=1
 
 # Run Claude Code and check debug output shows config loaded
-# Expected: "[WP Debug] Loaded config from: .workflow-pilot.json"
+# Expected: "[WP Debug] Loaded config from: .claude-hero.json"
 
 # Cleanup
-rm .workflow-pilot.json
+rm .claude-hero.json
 ```
 
 #### Test 1.2: Config precedence (env > project root > user global)
 ```bash
 # Create project config
-echo '{"mode": "training"}' > .workflow-pilot.json
-export WORKFLOW_PILOT_MODE=guidance
+echo '{"mode": "training"}' > .claude-hero.json
+export CLAUDE_HERO_MODE=guidance
 
 # Expected: Mode should be 'guidance' (env override wins)
 ```
@@ -53,7 +53,7 @@ export WORKFLOW_PILOT_MODE=guidance
 #### Test 2.1: React project detection
 ```bash
 # In a directory with package.json containing react
-export WORKFLOW_PILOT_DEBUG=1
+export CLAUDE_HERO_DEBUG=1
 # Run plugin
 # Expected: "[WP Debug] Detected project type: react"
 ```
@@ -122,7 +122,7 @@ echo "flask==2.0.0" > requirements.txt
 #### Test 5.2: Track progress
 ```bash
 # Parse PRD, mark items complete
-# Verify .workflow-pilot-progress.json updated
+# Verify .claude-hero-progress.json updated
 ```
 
 ---
@@ -154,19 +154,19 @@ echo "flask==2.0.0" > requirements.txt
 
 #### Test 7.1: Minimal mode
 ```bash
-export WORKFLOW_PILOT_MODE=minimal
+export CLAUDE_HERO_MODE=minimal
 # Expected: Only critical alerts, no info tips
 ```
 
 #### Test 7.2: Training mode
 ```bash
-export WORKFLOW_PILOT_MODE=training
+export CLAUDE_HERO_MODE=training
 # Expected: All tiers enabled, explanations included
 ```
 
 #### Test 7.3: Guidance mode (default)
 ```bash
-export WORKFLOW_PILOT_MODE=guidance
+export CLAUDE_HERO_MODE=guidance
 # Expected: All tiers enabled, concise output
 ```
 
@@ -182,7 +182,7 @@ export WORKFLOW_PILOT_MODE=guidance
 
 #### Test 8.2: State persistence
 ```bash
-# Check /tmp/workflow-pilot-state.json exists
+# Check /tmp/claude-hero-state.json exists
 # Verify lastTriggered timestamps
 ```
 
@@ -205,7 +205,7 @@ export WORKFLOW_PILOT_MODE=guidance
 5. Verify: Python preset would be applied
 
 ### Scenario C: Full Development Session
-1. Create .workflow-pilot.json with custom settings
+1. Create .claude-hero.json with custom settings
 2. Create PRD.md with requirements
 3. Start coding session
 4. Verify config loaded
