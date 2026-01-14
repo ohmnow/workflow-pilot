@@ -2,14 +2,14 @@
  * PRD Progress Tracker
  *
  * Tracks completion status of PRD requirements across sessions.
- * Persists progress to .workflow-pilot-progress.json in project root.
+ * Persists progress to .claude-hero-progress.json in project root.
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { ParsedPRD, PRDRequirement, parsePRD, getCompletionStats } from './parser.js';
 
-const PROGRESS_FILE = '.workflow-pilot-progress.json';
+const PROGRESS_FILE = '.claude-hero-progress.json';
 
 /**
  * Progress state persisted to disk
@@ -101,7 +101,7 @@ function saveProgressState(state: ProgressState, cwd?: string): void {
     cachedProgress = state;
     cachedCwd = cwd || process.cwd();
   } catch (error) {
-    console.error('[Workflow Pilot] Failed to save progress:', error);
+    console.error('[Claude Hero] Failed to save progress:', error);
   }
 }
 

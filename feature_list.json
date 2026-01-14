@@ -1,5 +1,5 @@
 {
-  "project": "claude-code-workflow-pilot",
+  "project": "claude-hero",
   "version": "0.7.0",
   "lastUpdated": "2026-01-11",
   "completedFeatures": 51,
@@ -12,10 +12,10 @@
       "category": "functional",
       "priority": "P1",
       "feature": "project-config",
-      "description": "Load .workflow-pilot.json from project root if present",
+      "description": "Load .claude-hero.json from project root if present",
       "steps": [
         "Create loadProjectConfig() in src/config/loader.ts",
-        "Check for .workflow-pilot.json in cwd",
+        "Check for .claude-hero.json in cwd",
         "Deep merge with existing config chain",
         "Add tests for project config loading"
       ],
@@ -308,7 +308,7 @@
       "feature": "prd-tracker",
       "description": "Persist progress to file",
       "steps": [
-        "Save progress to .workflow-pilot-progress.json",
+        "Save progress to .claude-hero-progress.json",
         "Load existing progress on startup",
         "Update progress when marking complete",
         "Add unit tests"
@@ -383,7 +383,7 @@
       "steps": [
         "Add project type to debug logging",
         "Show which preset was applied",
-        "Test with WORKFLOW_PILOT_DEBUG=1"
+        "Test with CLAUDE_HERO_DEBUG=1"
       ],
       "passes": true
     },

@@ -1,5 +1,5 @@
 /**
- * Configuration Schema for Workflow Pilot
+ * Configuration Schema for Claude Hero
  *
  * Defines the structure for user-configurable settings.
  */

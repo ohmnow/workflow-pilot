@@ -61,7 +61,7 @@ function loadPresetFile(presetName: string): PresetConfig | null {
   const presetPath = join(presetsDir, `${presetName}.json`);
 
   if (!existsSync(presetPath)) {
-    if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
       console.error(`[WP Debug] Preset not found: ${presetPath}`);
     }
     return null;
@@ -74,13 +74,13 @@ function loadPresetFile(presetName: string): PresetConfig | null {
     // Cache the loaded preset
     presetCache.set(presetName, preset);
 
-    if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
       console.error(`[WP Debug] Loaded preset: ${presetName}`);
     }
 
     return preset;
   } catch (error) {
-    console.error(`[Workflow Pilot] Error loading preset ${presetName}:`, error);
+    console.error(`[Claude Hero] Error loading preset ${presetName}:`, error);
     return null;
   }
 }
@@ -92,7 +92,7 @@ function loadPresetFile(presetName: string): PresetConfig | null {
 function loadPresetWithInheritance(presetName: string, visited = new Set<string>()): PresetConfig | null {
   // Prevent circular inheritance
   if (visited.has(presetName)) {
-    console.error(`[Workflow Pilot] Circular preset inheritance detected: ${presetName}`);
+    console.error(`[Claude Hero] Circular preset inheritance detected: ${presetName}`);
     return null;
   }
   visited.add(presetName);

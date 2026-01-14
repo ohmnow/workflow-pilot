@@ -1,7 +1,7 @@
 /**
  * Status Writer
  *
- * Writes Workflow Pilot state to a JSON file that can be read by
+ * Writes Claude Hero state to a JSON file that can be read by
  * the status line script for persistent visibility.
  */
 
@@ -10,7 +10,7 @@ import { AnalysisContext } from '../analyzer/context-builder.js';
 import { RuleSuggestion } from '../rules/index.js';
 import { AISuggestion } from '../analyzer/ai-analyzer.js';
 
-const STATUS_FILE = '/tmp/workflow-pilot-status.json';
+const STATUS_FILE = '/tmp/claude-hero-status.json';
 
 export interface WorkflowStatus {
   timestamp: string;

@@ -2,7 +2,7 @@
  * Box Formatter
  *
  * Creates visually appealing rounded boxes with background color
- * for Workflow Pilot output.
+ * for Claude Hero output.
  */
 
 // Box-drawing characters (rounded corners)

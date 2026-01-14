@@ -22,10 +22,10 @@ let cachedConfig: WorkflowPilotConfig | null = null;
  *
  * Priority (lowest to highest):
  * 1. Built-in defaults
- * 2. User global config (~/.config/workflow-pilot/config.json)
- * 3. Project config (./config/workflow-pilot.json)
- * 4. Project root config (./.workflow-pilot.json) - NEW
- * 5. WORKFLOW_PILOT_CONFIG env var (highest priority)
+ * 2. User global config (~/.config/claude-hero/config.json)
+ * 3. Project config (./config/claude-hero.json)
+ * 4. Project root config (./.claude-hero.json) - NEW
+ * 5. CLAUDE_HERO_CONFIG env var (highest priority)
  */
 function findConfigPaths(): string[] {
   const paths: string[] = [];
@@ -44,26 +44,26 @@ function findConfigPaths(): string[] {
 
   // 2. User global config
   const homeDir = process.env.HOME || process.env.USERPROFILE || '';
-  const userConfig = join(homeDir, '.config', 'workflow-pilot', 'config.json');
+  const userConfig = join(homeDir, '.config', 'claude-hero', 'config.json');
   if (existsSync(userConfig)) {
     paths.push(userConfig);
   }
 
   // 3. Project config directory
-  const projectConfig = join(process.cwd(), 'config', 'workflow-pilot.json');
+  const projectConfig = join(process.cwd(), 'config', 'claude-hero.json');
   if (existsSync(projectConfig)) {
     paths.push(projectConfig);
   }
 
-  // 4. Project root .workflow-pilot.json (NEW - user-specific project config)
-  const projectRootConfig = join(process.cwd(), '.workflow-pilot.json');
+  // 4. Project root .claude-hero.json (NEW - user-specific project config)
+  const projectRootConfig = join(process.cwd(), '.claude-hero.json');
   if (existsSync(projectRootConfig)) {
     paths.push(projectRootConfig);
   }
 
   // 5. Environment variable (highest priority)
-  if (process.env.WORKFLOW_PILOT_CONFIG) {
-    const envPath = process.env.WORKFLOW_PILOT_CONFIG;
+  if (process.env.CLAUDE_HERO_CONFIG) {
+    const envPath = process.env.CLAUDE_HERO_CONFIG;
     if (existsSync(envPath)) {
       paths.push(envPath);
     }
@@ -153,7 +153,7 @@ function validateConfig(config: unknown): config is Partial<WorkflowPilotConfig>
   // Validate mode if present
   if (c.mode !== undefined) {
     if (!['minimal', 'training', 'guidance', 'orchestrator'].includes(c.mode as string)) {
-      console.error(`[Workflow Pilot] Invalid mode: ${c.mode}. Using default.`);
+      console.error(`[Claude Hero] Invalid mode: ${c.mode}. Using default.`);
       return false;
     }
   }
@@ -191,18 +191,18 @@ export function loadConfig(forceReload = false): WorkflowPilotConfig {
           parsed
         );
 
-        if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+        if (process.env.CLAUDE_HERO_DEBUG === '1') {
           console.error(`[WP Debug] Loaded config from: ${configPath}`);
         }
       }
     } catch (error) {
-      console.error(`[Workflow Pilot] Error loading config from ${configPath}:`, error);
+      console.error(`[Claude Hero] Error loading config from ${configPath}:`, error);
     }
   }
 
   // Check for mode override via environment (highest priority)
-  if (process.env.WORKFLOW_PILOT_MODE) {
-    const envMode = process.env.WORKFLOW_PILOT_MODE as OperatingMode;
+  if (process.env.CLAUDE_HERO_MODE) {
+    const envMode = process.env.CLAUDE_HERO_MODE as OperatingMode;
     if (['minimal', 'training', 'guidance'].includes(envMode)) {
       mergedConfig.mode = envMode;
     }

@@ -1,7 +1,7 @@
 /**
  * GitHub Integration Module
  *
- * Provides GitHub integration for Workflow Pilot orchestrator mode.
+ * Provides GitHub integration for Claude Hero orchestrator mode.
  * Uses gh CLI for zero-config authentication.
  */
 

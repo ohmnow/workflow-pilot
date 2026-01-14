@@ -136,7 +136,7 @@ function formatPRBody(feature: GitHubFeature): string {
   sections.push('---');
   sections.push(`*Sprint ${feature.sprint} | Feature ID: \`${feature.id}\`*`);
   sections.push('');
-  sections.push('*Created with [Workflow Pilot](https://github.com/ohmnow/workflow-pilot)*');
+  sections.push('*Created with [Claude Hero](https://github.com/ohmnow/claude-hero)*');
 
   return sections.join('\n\n');
 }

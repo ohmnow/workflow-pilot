@@ -145,10 +145,10 @@ describe('AutopilotConfig', () => {
         expect(result).toEqual(DEFAULT_AUTOPILOT_CONFIG);
       });
 
-      it('should load from .workflow-pilot.json', () => {
+      it('should load from .claude-hero.json', () => {
         const config = { autopilot: { prStrategy: 'auto' } };
         fs.writeFileSync(
-          path.join(tempDir, '.workflow-pilot.json'),
+          path.join(tempDir, '.claude-hero.json'),
           JSON.stringify(config)
         );
 
@@ -171,9 +171,9 @@ describe('AutopilotConfig', () => {
       });
 
       it('should merge configs from multiple files', () => {
-        // .workflow-pilot.json first
+        // .claude-hero.json first
         fs.writeFileSync(
-          path.join(tempDir, '.workflow-pilot.json'),
+          path.join(tempDir, '.claude-hero.json'),
           JSON.stringify({ autopilot: { prStrategy: 'auto' } })
         );
         // feature_list.json second (overrides)
@@ -189,7 +189,7 @@ describe('AutopilotConfig', () => {
     });
 
     describe('saveAutopilotConfig', () => {
-      it('should save config to .workflow-pilot.json', () => {
+      it('should save config to .claude-hero.json', () => {
         const config: AutopilotConfig = {
           ...DEFAULT_AUTOPILOT_CONFIG,
           prStrategy: 'auto',
@@ -199,7 +199,7 @@ describe('AutopilotConfig', () => {
         expect(success).toBe(true);
 
         const saved = JSON.parse(
-          fs.readFileSync(path.join(tempDir, '.workflow-pilot.json'), 'utf-8')
+          fs.readFileSync(path.join(tempDir, '.claude-hero.json'), 'utf-8')
         );
         expect(saved.autopilot.prStrategy).toBe('auto');
       });
@@ -207,14 +207,14 @@ describe('AutopilotConfig', () => {
       it('should preserve existing config file content', () => {
         const existing = { otherSetting: true };
         fs.writeFileSync(
-          path.join(tempDir, '.workflow-pilot.json'),
+          path.join(tempDir, '.claude-hero.json'),
           JSON.stringify(existing)
         );
 
         saveAutopilotConfig(DEFAULT_AUTOPILOT_CONFIG, tempDir);
 
         const saved = JSON.parse(
-          fs.readFileSync(path.join(tempDir, '.workflow-pilot.json'), 'utf-8')
+          fs.readFileSync(path.join(tempDir, '.claude-hero.json'), 'utf-8')
         );
         expect(saved.otherSetting).toBe(true);
         expect(saved.autopilot).toBeDefined();
@@ -226,9 +226,9 @@ describe('AutopilotConfig', () => {
         expect(hasAutopilotConfig(tempDir)).toBe(false);
       });
 
-      it('should return true if .workflow-pilot.json has autopilot', () => {
+      it('should return true if .claude-hero.json has autopilot', () => {
         fs.writeFileSync(
-          path.join(tempDir, '.workflow-pilot.json'),
+          path.join(tempDir, '.claude-hero.json'),
           JSON.stringify({ autopilot: {} })
         );
         expect(hasAutopilotConfig(tempDir)).toBe(true);

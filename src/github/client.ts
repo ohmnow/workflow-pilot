@@ -449,7 +449,7 @@ async function runGhCommand<T = void>(
   const { parseJson = false, timeout = 30000 } = options;
 
   return new Promise((resolve) => {
-    if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
       console.error(`[WP Debug] Running: gh ${args.join(' ')}`);
     }
 
@@ -469,7 +469,7 @@ async function runGhCommand<T = void>(
     });
 
     child.on('close', (code) => {
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] gh completed, exit code:', code);
         if (stderr) console.error('[WP Debug] gh stderr:', stderr);
       }
@@ -494,7 +494,7 @@ async function runGhCommand<T = void>(
     });
 
     child.on('error', (err) => {
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] gh spawn error:', err);
       }
       resolve({
@@ -507,7 +507,7 @@ async function runGhCommand<T = void>(
 
     // Timeout
     setTimeout(() => {
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] gh timeout, killing process');
       }
       child.kill('SIGTERM');

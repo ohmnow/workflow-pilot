@@ -38,7 +38,7 @@ describe('EventLogger', () => {
       logger.log('worker.start', { issueNumber: 1 });
       logger.log('worker.complete', { issueNumber: 1, durationMs: 5000 });
 
-      const logPath = path.join(tempDir, '.workflow-pilot-events.json');
+      const logPath = path.join(tempDir, '.claude-hero-events.json');
       expect(fs.existsSync(logPath)).toBe(true);
 
       const content = JSON.parse(fs.readFileSync(logPath, 'utf-8'));
@@ -314,7 +314,7 @@ describe('EventLogger', () => {
       });
 
       // Add events manually with old timestamps
-      const logPath = path.join(tempDir, '.workflow-pilot-events.json');
+      const logPath = path.join(tempDir, '.claude-hero-events.json');
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 5); // 5 days ago
 
@@ -424,7 +424,7 @@ describe('Helper Functions', () => {
         const logger = createEventLogger(tempDir);
         logger.logWorkerStart(1);
 
-        const logPath = path.join(tempDir, '.workflow-pilot-events.json');
+        const logPath = path.join(tempDir, '.claude-hero-events.json');
         expect(fs.existsSync(logPath)).toBe(true);
       } finally {
         fs.rmSync(tempDir, { recursive: true });
@@ -435,7 +435,7 @@ describe('Helper Functions', () => {
   describe('getEventLogPath()', () => {
     it('should return correct path', () => {
       const logPath = getEventLogPath('/test/project');
-      expect(logPath).toBe('/test/project/.workflow-pilot-events.json');
+      expect(logPath).toBe('/test/project/.claude-hero-events.json');
     });
   });
 });

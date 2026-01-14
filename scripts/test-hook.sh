@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test script for the Workflow Pilot hook
+# Test script for the Claude Hero hook
 # Simulates the input that Claude Code would provide
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

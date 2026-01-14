@@ -1,5 +1,5 @@
 /**
- * Event Logger for Workflow Pilot
+ * Event Logger for Claude Hero
  *
  * Captures and stores events to a JSON file for observability.
  * Foundation for notifications, dashboards, and analytics.
@@ -16,7 +16,7 @@ import {
   createEvent,
 } from './event-types.js';
 
-const EVENT_LOG_FILENAME = '.workflow-pilot-events.json';
+const EVENT_LOG_FILENAME = '.claude-hero-events.json';
 const CURRENT_VERSION = '1.0.0';
 const DEFAULT_RETENTION_DAYS = 30;
 

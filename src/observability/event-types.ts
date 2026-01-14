@@ -1,5 +1,5 @@
 /**
- * Event Types for Workflow Pilot Observability
+ * Event Types for Claude Hero Observability
  *
  * Defines all event types captured by the event logger.
  */

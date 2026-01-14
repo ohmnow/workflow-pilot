@@ -1,5 +1,5 @@
 {
-  "name": "claude-code-workflow-pilot",
+  "name": "claude-hero",
   "version": "0.3.0",
   "description": "AI-powered Claude Code plugin for workflow guidance and best practices",
   "main": "dist/index.js",

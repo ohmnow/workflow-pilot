@@ -31,7 +31,7 @@ export interface GitHubState {
 }
 
 /**
- * Orchestrator state persisted to .workflow-pilot-orchestrator.json
+ * Orchestrator state persisted to .claude-hero-orchestrator.json
  */
 export interface OrchestratorState {
   /** Orchestrator is actively managing this project */
@@ -69,7 +69,7 @@ export interface OrchestratorState {
   updatedAt: string;
 }
 
-const STATE_FILENAME = '.workflow-pilot-orchestrator.json';
+const STATE_FILENAME = '.claude-hero-orchestrator.json';
 
 /**
  * Default state for new orchestrator projects

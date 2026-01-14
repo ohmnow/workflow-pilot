@@ -28,5 +28,5 @@ coverage/
 
 # Playwright MCP screenshots
 .playwright-mcp/
-.workflow-pilot.json
-.workflow-pilot-orchestrator.json
+.claude-hero.json
+.claude-hero-orchestrator.json
