@@ -31,7 +31,7 @@ echo '{"mode": "minimal"}' > .claude-hero.json
 export CLAUDE_HERO_DEBUG=1
 
 # Run Claude Code and check debug output shows config loaded
-# Expected: "[WP Debug] Loaded config from: .claude-hero.json"
+# Expected: "[Claude Hero] Loaded config from: .claude-hero.json"
 
 # Cleanup
 rm .claude-hero.json
@@ -55,7 +55,7 @@ export CLAUDE_HERO_MODE=guidance
 # In a directory with package.json containing react
 export CLAUDE_HERO_DEBUG=1
 # Run plugin
-# Expected: "[WP Debug] Detected project type: react"
+# Expected: "[Claude Hero] Detected project type: react"
 ```
 
 #### Test 2.2: Python project detection
@@ -63,7 +63,7 @@ export CLAUDE_HERO_DEBUG=1
 # Create requirements.txt with flask
 echo "flask==2.0.0" > requirements.txt
 # Run plugin
-# Expected: "[WP Debug] Detected project type: python-flask"
+# Expected: "[Claude Hero] Detected project type: python-flask"
 ```
 
 #### Test 2.3: TypeScript detection

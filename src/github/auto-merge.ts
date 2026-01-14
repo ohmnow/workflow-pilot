@@ -6,7 +6,7 @@
  */
 
 import { spawn } from 'child_process';
-import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG, PRStrategy } from '../orchestrator/autopilot-config.js';
+import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG, PRStrategy } from '../hero/autopilot-config.js';
 import { checkPRStatus, isPRReadyToMerge, PRStatus } from './ci-gate-checker.js';
 
 /**

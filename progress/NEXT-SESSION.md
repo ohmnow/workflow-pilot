@@ -1,4 +1,4 @@
-# Workflow Pilot - Next Session Guide
+# Claude Hero - Next Session Guide
 
 **Last Updated:** 2026-01-11
 **Version:** 0.7.0
@@ -43,7 +43,7 @@ export WORKFLOW_PILOT_DEBUG=1
 
 **Expected:** You should see hook output like:
 ```
-[Workflow Pilot] 💡 Consider using Plan mode...
+[Claude Hero] 💡 Consider using Plan mode...
 ```
 
 **Verify:** Hook fires on every prompt submission.
@@ -97,7 +97,7 @@ Try: "Add a comment to src/index.ts"
 **What to do:**
 ```bash
 # Create a project-specific config
-echo '{"mode": "training"}' > .workflow-pilot.json
+echo '{"mode": "training"}' > .claude-hero.json
 ```
 
 Then start a new Claude Code session with debug enabled:
@@ -107,12 +107,12 @@ export WORKFLOW_PILOT_DEBUG=1
 
 **Expected output:**
 ```
-[WP Debug] Loaded config from: /path/to/.workflow-pilot.json
+[Claude Hero] Loaded config from: /path/to/.claude-hero.json
 ```
 
 **Cleanup:**
 ```bash
-rm .workflow-pilot.json
+rm .claude-hero.json
 ```
 
 ---
@@ -121,7 +121,7 @@ rm .workflow-pilot.json
 **What to do:**
 ```bash
 # Create project config with training mode
-echo '{"mode": "training"}' > .workflow-pilot.json
+echo '{"mode": "training"}' > .claude-hero.json
 
 # But override via environment
 export WORKFLOW_PILOT_MODE=minimal
@@ -131,7 +131,7 @@ export WORKFLOW_PILOT_MODE=minimal
 
 **Cleanup:**
 ```bash
-rm .workflow-pilot.json
+rm .claude-hero.json
 unset WORKFLOW_PILOT_MODE
 ```
 
@@ -193,8 +193,8 @@ export WORKFLOW_PILOT_DEBUG=1
 
 **Expected output:**
 ```
-[WP Debug] Detected project type: node
-[WP Debug] TypeScript: true, Monorepo: false
+[Claude Hero] Detected project type: node
+[Claude Hero] TypeScript: true, Monorepo: false
 ```
 
 ---
@@ -210,7 +210,7 @@ export WORKFLOW_PILOT_DEBUG=1
 
 **Expected:**
 ```
-[WP Debug] Detected project type: react
+[Claude Hero] Detected project type: react
 ```
 
 **Cleanup:**
@@ -231,7 +231,7 @@ export WORKFLOW_PILOT_DEBUG=1
 
 **Expected:**
 ```
-[WP Debug] Detected project type: python-flask
+[Claude Hero] Detected project type: python-flask
 ```
 
 **Cleanup:**
@@ -357,7 +357,7 @@ console.log(`Progress: ${summary.completed}/${summary.total} (${summary.percenta
 console.log('Next:', summary.nextRequirement?.text);
 ```
 
-**Expected:** Progress file created at `/tmp/.workflow-pilot-progress.json`
+**Expected:** Progress file created at `/tmp/.claude-hero-progress.json`
 
 ---
 
@@ -366,7 +366,7 @@ console.log('Next:', summary.nextRequirement?.text);
 ### Test 7.1: Verify Cooldown State
 **What to do:** After triggering some rules, check:
 ```bash
-cat /tmp/workflow-pilot-state.json
+cat /tmp/claude-hero-state.json
 ```
 
 **Expected:** JSON with `lastTriggered` timestamps for each rule.
@@ -413,12 +413,12 @@ cat /tmp/workflow-pilot-state.json
 
 6. **Check cooldown state:**
    ```bash
-   cat /tmp/workflow-pilot-state.json
+   cat /tmp/claude-hero-state.json
    ```
 
 7. **Verify all hooks working** by checking log:
    ```bash
-   tail -50 /tmp/workflow-pilot.log
+   tail -50 /tmp/claude-hero.log
    ```
 
 ---
@@ -430,7 +430,7 @@ After completing tests, mark off:
 - [ ] **Test 1.1:** UserPromptSubmit hook fires
 - [ ] **Test 1.2:** PreToolUse blocks dangerous commands
 - [ ] **Test 1.3:** PostToolUse provides feedback
-- [ ] **Test 2.1:** Project config loads from .workflow-pilot.json
+- [ ] **Test 2.1:** Project config loads from .claude-hero.json
 - [ ] **Test 2.2:** Config precedence correct (env > file)
 - [ ] **Test 3.1:** Minimal mode shows only critical alerts
 - [ ] **Test 3.2:** Training mode shows all alerts with explanations
@@ -508,10 +508,10 @@ export WORKFLOW_PILOT_DEBUG=1
 export WORKFLOW_PILOT_MODE=minimal|training|guidance
 
 # Check hook activity
-tail -f /tmp/workflow-pilot.log
+tail -f /tmp/claude-hero.log
 
 # Check cooldown state
-cat /tmp/workflow-pilot-state.json
+cat /tmp/claude-hero-state.json
 ```
 
 ---

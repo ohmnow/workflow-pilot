@@ -258,8 +258,8 @@ export function detectProjectType(cwd?: string, forceReload = false): ProjectInf
   cachedCwd = workingDir;
 
   if (process.env.CLAUDE_HERO_DEBUG === '1') {
-    console.error(`[WP Debug] Detected project type: ${projectType}`);
-    console.error(`[WP Debug] TypeScript: ${hasTypeScript}, Monorepo: ${isMonorepo}`);
+    console.error(`[Claude Hero] Detected project type: ${projectType}`);
+    console.error(`[Claude Hero] TypeScript: ${hasTypeScript}, Monorepo: ${isMonorepo}`);
   }
 
   return projectInfo;

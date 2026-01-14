@@ -10,7 +10,7 @@ import {
   GitHubRelease,
   GitHubClientResult,
 } from './client.js';
-import { Feature, Sprint, FeatureList, getSprintProgress } from '../orchestrator/feature-schema.js';
+import { Feature, Sprint, FeatureList, getSprintProgress } from '../hero/feature-schema.js';
 
 /**
  * Create a release for a completed sprint

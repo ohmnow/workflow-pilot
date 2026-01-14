@@ -28,12 +28,12 @@ import { printBox, formatBox } from './output/box-formatter.js';
 import { writeStatusFile } from './output/status-writer.js';
 import { loadConfig, isTierEnabled, isCategoryEnabled, getMode, isTrainingMode } from './config/loader.js';
 import { canTrigger, recordTrigger } from './state/cooldown.js';
-import { isOrchestratorMode } from './orchestrator/index.js';
+import { isHeroMode } from './hero/index.js';
 import {
-  handleUserPromptSubmit as handleOrchestratorPrompt,
-  handlePreToolUse as handleOrchestratorPreTool,
-  handlePostToolUse as handleOrchestratorPostTool,
-} from './orchestrator/hooks.js';
+  handleUserPromptSubmit as handleHeroPrompt,
+  handlePreToolUse as handleHeroPreTool,
+  handlePostToolUse as handleHeroPostTool,
+} from './hero/hooks.js';
 
 interface HookInput {
   session_id: string;
@@ -153,13 +153,13 @@ async function main(): Promise<void> {
     // Debug mode - output to stderr so it doesn't interfere with hook output
     const DEBUG = process.env.CLAUDE_HERO_DEBUG === '1';
     if (DEBUG) {
-      console.error('[WP Debug] Input:', JSON.stringify(input, null, 2));
+      console.error('[Claude Hero] Input:', JSON.stringify(input, null, 2));
     }
 
     // Parse the transcript to get conversation history
     const transcript = await parseTranscript(input.transcript_path);
     if (DEBUG) {
-      console.error('[WP Debug] Transcript messages:', transcript.messages.length);
+      console.error('[Claude Hero] Transcript messages:', transcript.messages.length);
     }
 
     // Build context for analysis
@@ -177,9 +177,9 @@ async function main(): Promise<void> {
     });
 
     if (DEBUG) {
-      console.error('[WP Debug] Context patterns:', context.patterns);
-      console.error('[WP Debug] Has uncommitted work:', context.hasUncommittedWork);
-      console.error('[WP Debug] Recent tool uses:', context.recentToolUses.length);
+      console.error('[Claude Hero] Context patterns:', context.patterns);
+      console.error('[Claude Hero] Has uncommitted work:', context.hasUncommittedWork);
+      console.error('[Claude Hero] Recent tool uses:', context.recentToolUses.length);
     }
 
     // Load configuration
@@ -187,8 +187,8 @@ async function main(): Promise<void> {
     const mode = getMode();
 
     if (DEBUG) {
-      console.error('[WP Debug] Mode:', mode);
-      console.error('[WP Debug] Config:', JSON.stringify(config, null, 2));
+      console.error('[Claude Hero] Mode:', mode);
+      console.error('[Claude Hero] Config:', JSON.stringify(config, null, 2));
     }
 
     // Training mode: Show intent prompt at start of conversation
@@ -198,31 +198,31 @@ async function main(): Promise<void> {
       showTrainingIntentPrompt();
     }
 
-    // Orchestrator mode: Handle phase-aware guidance
-    let orchestratorContext: string | undefined;
-    if (isOrchestratorMode()) {
+    // Hero mode: Handle phase-aware guidance
+    let heroContext: string | undefined;
+    if (isHeroMode()) {
       if (input.hook_event_name === 'UserPromptSubmit' && input.prompt) {
-        const orchResult = await handleOrchestratorPrompt(input.prompt);
+        const heroResult = await handleHeroPrompt(input.prompt);
 
         // Show user message if any
-        if (orchResult.userMessage) {
-          const title = orchResult.statusSummary
-            ? `Orchestrator - ${orchResult.statusSummary}`
-            : 'Orchestrator';
-          printBox([orchResult.userMessage], {
+        if (heroResult.userMessage) {
+          const title = heroResult.statusSummary
+            ? `Hero - ${heroResult.statusSummary}`
+            : 'Hero';
+          printBox([heroResult.userMessage], {
             title,
             type: 'info',
           });
         }
 
-        orchestratorContext = orchResult.contextInjection;
+        heroContext = heroResult.contextInjection;
       }
 
       if (input.hook_event_name === 'PreToolUse' && input.tool_name && input.tool_input) {
-        const orchResult = handleOrchestratorPreTool(input.tool_name, input.tool_input);
+        const heroResult = handleHeroPreTool(input.tool_name, input.tool_input);
 
-        if (orchResult.block) {
-          printBox([orchResult.blockReason || 'Action blocked'], {
+        if (heroResult.block) {
+          printBox([heroResult.blockReason || 'Action blocked'], {
             title: 'BLOCKED',
             type: 'critical',
           });
@@ -231,14 +231,14 @@ async function main(): Promise<void> {
       }
 
       if (input.hook_event_name === 'PostToolUse' && input.tool_name && input.tool_input) {
-        const orchResult = handleOrchestratorPostTool(
+        const heroResult = handleHeroPostTool(
           input.tool_name,
           input.tool_input,
           input.tool_output || ''
         );
 
-        if (orchResult.contextInjection) {
-          orchestratorContext = (orchestratorContext || '') + '\n' + orchResult.contextInjection;
+        if (heroResult.contextInjection) {
+          heroContext = (heroContext || '') + '\n' + heroResult.contextInjection;
         }
       }
     }
@@ -246,7 +246,7 @@ async function main(): Promise<void> {
     // Get suggestions from rule engine and AI
     const ruleSuggestions = evaluateRules(context);
     if (DEBUG) {
-      console.error('[WP Debug] Rule suggestions:', ruleSuggestions.length);
+      console.error('[Claude Hero] Rule suggestions:', ruleSuggestions.length);
     }
 
     // Only call AI if enabled in config
@@ -256,14 +256,14 @@ async function main(): Promise<void> {
     const allSuggestions = [...ruleSuggestions, ...aiSuggestions];
 
     if (DEBUG) {
-      console.error('[WP Debug] Total suggestions before filter:', allSuggestions.length);
+      console.error('[Claude Hero] Total suggestions before filter:', allSuggestions.length);
     }
 
     // Filter suggestions based on config and cooldowns
     const filteredSuggestions = filterSuggestions(allSuggestions);
 
     if (DEBUG) {
-      console.error('[WP Debug] Suggestions after filter:', filteredSuggestions.length);
+      console.error('[Claude Hero] Suggestions after filter:', filteredSuggestions.length);
     }
 
     // Write status file for status line integration
@@ -341,9 +341,9 @@ async function main(): Promise<void> {
         } : undefined,
       });
 
-      // Combine orchestrator context with suggestions if both exist
-      const combinedContext = orchestratorContext
-        ? `${orchestratorContext}\n\n${formattedSuggestion}`
+      // Combine hero context with suggestions if both exist
+      const combinedContext = heroContext
+        ? `${heroContext}\n\n${formattedSuggestion}`
         : formattedSuggestion;
 
       const output: HookOutput = {
@@ -355,12 +355,12 @@ async function main(): Promise<void> {
 
       console.log(JSON.stringify(output));
     }
-    // ORCHESTRATOR MODE: Inject context even if no rule suggestions
-    else if (orchestratorContext) {
+    // HERO MODE: Inject context even if no rule suggestions
+    else if (heroContext) {
       const output: HookOutput = {
         hookSpecificOutput: {
           hookEventName: input.hook_event_name,
-          additionalContext: orchestratorContext,
+          additionalContext: heroContext,
         },
       };
 

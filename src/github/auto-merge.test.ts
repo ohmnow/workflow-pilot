@@ -9,7 +9,7 @@ import {
   summarizeAutoMergeResults,
   isAutoMergeSupported,
 } from './auto-merge.js';
-import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../orchestrator/autopilot-config.js';
+import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../hero/autopilot-config.js';
 
 // Mock child_process.spawn
 vi.mock('child_process', () => ({

@@ -114,7 +114,7 @@ export function writeStatusFile(
     fs.writeFileSync(STATUS_FILE, JSON.stringify(status, null, 2));
   } catch (error) {
     // Silently fail - status line is optional
-    console.error('[WP] Failed to write status file:', error);
+    console.error('[Claude Hero] Failed to write status file:', error);
   }
 }
 

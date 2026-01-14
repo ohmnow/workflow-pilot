@@ -11,8 +11,8 @@ import {
   GitHubIssue,
   GitHubClientResult,
 } from './client.js';
-import { Feature, FeatureList, calculateEffectiveStatus } from '../orchestrator/feature-schema.js';
-import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../orchestrator/autopilot-config.js';
+import { Feature, FeatureList, calculateEffectiveStatus } from '../hero/feature-schema.js';
+import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../hero/autopilot-config.js';
 import { GitHubFeature } from './issue-manager.js';
 
 /**

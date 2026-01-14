@@ -1,15 +1,15 @@
 /**
- * Orchestrator-Specific Rules
+ * Hero Mode Rules
  *
- * Rules that only apply when orchestrator mode is active.
+ * Rules that only apply when hero mode is active.
  * These enforce the development workflow and provide proactive guidance.
  */
 
 import { AnalysisContext } from '../analyzer/context-builder.js';
 import { RuleSuggestion } from '../rules/index.js';
 import {
-  getOrchestratorContext,
-  OrchestratorContext,
+  getHeroContext,
+  HeroContext,
 } from './index.js';
 import {
   calculateEffectiveStatus,
@@ -19,66 +19,66 @@ import {
 } from './feature-schema.js';
 
 /**
- * Rule definition for orchestrator mode
+ * Rule definition for hero mode
  */
-interface OrchestratorRule {
+interface HeroRule {
   id: string;
   category: string;
   level: 'critical' | 'warning' | 'info';
-  condition: (ctx: AnalysisContext, orchCtx: OrchestratorContext) => boolean;
-  suggestion: string | ((orchCtx: OrchestratorContext) => string);
-  reasoning: string | ((orchCtx: OrchestratorContext) => string);
+  condition: (ctx: AnalysisContext, heroCtx: HeroContext) => boolean;
+  suggestion: string | ((heroCtx: HeroContext) => string);
+  reasoning: string | ((heroCtx: HeroContext) => string);
   priority: 'low' | 'medium' | 'high';
 }
 
 /**
- * Orchestrator-specific rules
+ * Hero mode rules
  */
-const orchestratorRules: OrchestratorRule[] = [
+const heroRules: HeroRule[] = [
   // Feature list missing - critical for development phase
   {
     id: 'orch-missing-feature-list',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'warning',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled) return false;
-      if (!orchCtx.state) return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled) return false;
+      if (!heroCtx.state) return false;
       // Only warn during development/verification phases
-      const phase = orchCtx.state.currentPhase;
-      return (phase === 'development' || phase === 'verification') && !orchCtx.featureList;
+      const phase = heroCtx.state.currentPhase;
+      return (phase === 'development' || phase === 'verification') && !heroCtx.featureList;
     },
     suggestion: 'Create a feature_list.json to track your development progress',
-    reasoning: 'Orchestrator mode works best with a feature list to track blocking dependencies and sprint progress',
+    reasoning: 'Hero mode works best with a feature list to track blocking dependencies and sprint progress',
     priority: 'high',
   },
 
   // Blocked feature warning - prevent work on blocked features
   {
     id: 'orch-blocked-feature',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'warning',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state || !orchCtx.featureList) return false;
-      if (orchCtx.state.currentPhase !== 'development') return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state || !heroCtx.featureList) return false;
+      if (heroCtx.state.currentPhase !== 'development') return false;
 
-      const { currentFeatureId } = orchCtx.state;
+      const { currentFeatureId } = heroCtx.state;
       if (!currentFeatureId) return false;
 
-      const feature = orchCtx.featureList.features.find(f => f.id === currentFeatureId);
+      const feature = heroCtx.featureList.features.find(f => f.id === currentFeatureId);
       if (!feature) return false;
 
-      const effectiveStatus = calculateEffectiveStatus(feature, orchCtx.featureList.features);
+      const effectiveStatus = calculateEffectiveStatus(feature, heroCtx.featureList.features);
       return effectiveStatus === 'blocked';
     },
-    suggestion: (orchCtx) => {
-      const feature = orchCtx.featureList?.features.find(
-        f => f.id === orchCtx.state?.currentFeatureId
+    suggestion: (heroCtx) => {
+      const feature = heroCtx.featureList?.features.find(
+        f => f.id === heroCtx.state?.currentFeatureId
       );
       if (!feature) return 'Current feature is blocked by dependencies';
 
       const blockedBy = feature.dependsOn
         .filter(depId => {
-          const dep = orchCtx.featureList?.features.find(f => f.id === depId);
+          const dep = heroCtx.featureList?.features.find(f => f.id === depId);
           // Include if: dependency doesn't exist (missing), OR is blocking and not passed
           return !dep || (dep.blocking && !dep.passes);
         });
@@ -92,14 +92,14 @@ const orchestratorRules: OrchestratorRule[] = [
   // Sprint boundary warning - encourage focus on current sprint
   {
     id: 'orch-sprint-boundary',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'info',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state || !orchCtx.featureList) return false;
-      if (orchCtx.state.currentPhase !== 'development') return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state || !heroCtx.featureList) return false;
+      if (heroCtx.state.currentPhase !== 'development') return false;
 
-      const currentSprint = orchCtx.state.currentSprint;
-      const sprintProgress = getSprintProgress(orchCtx.featureList, currentSprint);
+      const currentSprint = heroCtx.state.currentSprint;
+      const sprintProgress = getSprintProgress(heroCtx.featureList, currentSprint);
 
       // Warn if current sprint has unfinished work but user might be looking ahead
       if (sprintProgress.percentage < 100) {
@@ -112,8 +112,8 @@ const orchestratorRules: OrchestratorRule[] = [
 
       return false;
     },
-    suggestion: (orchCtx) => {
-      const progress = orchCtx.sprintProgress;
+    suggestion: (heroCtx) => {
+      const progress = heroCtx.sprintProgress;
       return `Current sprint is ${progress?.percentage}% complete. Consider finishing current features before moving on.`;
     },
     reasoning: 'Focused sprints lead to better completion rates and cleaner code',
@@ -123,10 +123,10 @@ const orchestratorRules: OrchestratorRule[] = [
   // Verification reminder - prompt tests before marking complete
   {
     id: 'orch-verification-reminder',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'warning',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state || !orchCtx.featureList) return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state || !heroCtx.featureList) return false;
 
       // Check if trying to mark a feature as complete/verified
       const prompt = ctx.currentPrompt?.toLowerCase() || '';
@@ -156,23 +156,23 @@ const orchestratorRules: OrchestratorRule[] = [
   // Parallel work available - suggest subagents for non-blocking work
   {
     id: 'orch-parallel-available',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'info',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state || !orchCtx.featureList) return false;
-      if (orchCtx.state.currentPhase !== 'development') return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state || !heroCtx.featureList) return false;
+      if (heroCtx.state.currentPhase !== 'development') return false;
 
       const parallelizable = getParallelizableFeatures(
-        orchCtx.featureList,
-        orchCtx.state.currentSprint
+        heroCtx.featureList,
+        heroCtx.state.currentSprint
       );
 
       // Only suggest if multiple parallelizable features exist
       return parallelizable.length >= 2;
     },
-    suggestion: (orchCtx) => {
-      const parallelizable = orchCtx.featureList
-        ? getParallelizableFeatures(orchCtx.featureList, orchCtx.state?.currentSprint || 1)
+    suggestion: (heroCtx) => {
+      const parallelizable = heroCtx.featureList
+        ? getParallelizableFeatures(heroCtx.featureList, heroCtx.state?.currentSprint || 1)
         : [];
       return `${parallelizable.length} non-blocking features can be worked on in parallel using subagents.`;
     },
@@ -183,11 +183,11 @@ const orchestratorRules: OrchestratorRule[] = [
   // Production gate - require all checks before deploy
   {
     id: 'orch-production-gate',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'critical',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state) return false;
-      if (orchCtx.state.currentPhase !== 'production') return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state) return false;
+      if (heroCtx.state.currentPhase !== 'production') return false;
 
       // Check if attempting to deploy
       if (ctx.toolInfo?.name !== 'Bash') return false;
@@ -203,15 +203,15 @@ const orchestratorRules: OrchestratorRule[] = [
       if (!isDeploying) return false;
 
       // Check if all features are verified
-      if (orchCtx.featureList) {
-        const unverified = orchCtx.featureList.features.filter(f => !f.passes);
+      if (heroCtx.featureList) {
+        const unverified = heroCtx.featureList.features.filter(f => !f.passes);
         return unverified.length > 0;
       }
 
       return false;
     },
-    suggestion: (orchCtx) => {
-      const unverified = orchCtx.featureList?.features.filter(f => !f.passes) || [];
+    suggestion: (heroCtx) => {
+      const unverified = heroCtx.featureList?.features.filter(f => !f.passes) || [];
       return `Cannot deploy: ${unverified.length} feature(s) not verified. Complete verification first.`;
     },
     reasoning: 'Production deployments require all features to pass verification',
@@ -221,11 +221,11 @@ const orchestratorRules: OrchestratorRule[] = [
   // Ready features available - show what can be worked on
   {
     id: 'orch-ready-features',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'info',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state || !orchCtx.featureList) return false;
-      if (orchCtx.state.currentPhase !== 'development') return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state || !heroCtx.featureList) return false;
+      if (heroCtx.state.currentPhase !== 'development') return false;
 
       // Show when starting a session or asking what to do
       const prompt = ctx.currentPrompt?.toLowerCase() || '';
@@ -240,11 +240,11 @@ const orchestratorRules: OrchestratorRule[] = [
 
       if (!isAskingWhatsNext && !isSessionStart) return false;
 
-      const ready = getReadyFeatures(orchCtx.featureList);
+      const ready = getReadyFeatures(heroCtx.featureList);
       return ready.length > 0;
     },
-    suggestion: (orchCtx) => {
-      const ready = orchCtx.featureList ? getReadyFeatures(orchCtx.featureList) : [];
+    suggestion: (heroCtx) => {
+      const ready = heroCtx.featureList ? getReadyFeatures(heroCtx.featureList) : [];
       const featureNames = ready.slice(0, 3).map(f => f.name).join(', ');
       return `Ready to work on: ${featureNames}${ready.length > 3 ? ` (+${ready.length - 3} more)` : ''}`;
     },
@@ -255,21 +255,21 @@ const orchestratorRules: OrchestratorRule[] = [
   // Sprint complete - suggest moving to next sprint or verification
   {
     id: 'orch-sprint-complete',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'info',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state || !orchCtx.featureList) return false;
-      if (orchCtx.state.currentPhase !== 'development') return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state || !heroCtx.featureList) return false;
+      if (heroCtx.state.currentPhase !== 'development') return false;
 
-      const progress = orchCtx.sprintProgress;
+      const progress = heroCtx.sprintProgress;
       return progress !== null && progress.percentage === 100;
     },
-    suggestion: (orchCtx) => {
-      const nextSprint = (orchCtx.state?.currentSprint || 1) + 1;
-      const hasMoreSprints = orchCtx.featureList?.sprints.some(s => s.number === nextSprint);
+    suggestion: (heroCtx) => {
+      const nextSprint = (heroCtx.state?.currentSprint || 1) + 1;
+      const hasMoreSprints = heroCtx.featureList?.sprints.some(s => s.number === nextSprint);
 
       if (hasMoreSprints) {
-        return `Sprint ${orchCtx.state?.currentSprint} complete! Ready to advance to Sprint ${nextSprint}.`;
+        return `Sprint ${heroCtx.state?.currentSprint} complete! Ready to advance to Sprint ${nextSprint}.`;
       }
       return 'All sprints complete! Consider moving to verification phase.';
     },
@@ -280,12 +280,12 @@ const orchestratorRules: OrchestratorRule[] = [
   // Phase transition suggestion
   {
     id: 'orch-phase-transition',
-    category: 'orchestrator',
+    category: 'hero',
     level: 'info',
-    condition: (ctx, orchCtx) => {
-      if (!orchCtx.enabled || !orchCtx.state) return false;
+    condition: (ctx, heroCtx) => {
+      if (!heroCtx.enabled || !heroCtx.state) return false;
 
-      const phase = orchCtx.state.currentPhase;
+      const phase = heroCtx.state.currentPhase;
 
       // Suggest transitions based on conditions
       switch (phase) {
@@ -302,19 +302,19 @@ const orchestratorRules: OrchestratorRule[] = [
 
         case 'planning':
           // Suggest moving to development after feature list created
-          return orchCtx.featureList !== null;
+          return heroCtx.featureList !== null;
 
         case 'verification':
           // Suggest moving to production if all verified
-          if (!orchCtx.featureList) return false;
-          return orchCtx.featureList.features.every(f => f.passes);
+          if (!heroCtx.featureList) return false;
+          return heroCtx.featureList.features.every(f => f.passes);
 
         default:
           return false;
       }
     },
-    suggestion: (orchCtx) => {
-      const phase = orchCtx.state?.currentPhase;
+    suggestion: (heroCtx) => {
+      const phase = heroCtx.state?.currentPhase;
       const transitions: Record<string, string> = {
         onboarding: 'Ready to move to setup phase? Let\'s scaffold the project.',
         setup: 'Project initialized. Ready to move to planning phase?',
@@ -329,26 +329,26 @@ const orchestratorRules: OrchestratorRule[] = [
 ];
 
 /**
- * Evaluate orchestrator rules against the current context
+ * Evaluate hero rules against the current context
  */
-export function evaluateOrchestratorRules(context: AnalysisContext): RuleSuggestion[] {
-  const orchCtx = getOrchestratorContext();
+export function evaluateHeroRules(context: AnalysisContext): RuleSuggestion[] {
+  const heroCtx = getHeroContext();
 
-  if (!orchCtx.enabled) {
+  if (!heroCtx.enabled) {
     return [];
   }
 
   const suggestions: RuleSuggestion[] = [];
 
-  for (const rule of orchestratorRules) {
+  for (const rule of heroRules) {
     try {
-      if (rule.condition(context, orchCtx)) {
+      if (rule.condition(context, heroCtx)) {
         const suggestion = typeof rule.suggestion === 'function'
-          ? rule.suggestion(orchCtx)
+          ? rule.suggestion(heroCtx)
           : rule.suggestion;
 
         const reasoning = typeof rule.reasoning === 'function'
-          ? rule.reasoning(orchCtx)
+          ? rule.reasoning(heroCtx)
           : rule.reasoning;
 
         suggestions.push({
@@ -371,8 +371,14 @@ export function evaluateOrchestratorRules(context: AnalysisContext): RuleSuggest
 }
 
 /**
- * Get all orchestrator rule IDs (for testing/inspection)
+ * Get all hero rule IDs (for testing/inspection)
  */
-export function getOrchestratorRuleIds(): string[] {
-  return orchestratorRules.map(r => r.id);
+export function getHeroRuleIds(): string[] {
+  return heroRules.map(r => r.id);
 }
+
+// Backwards compatibility aliases
+/** @deprecated Use evaluateHeroRules instead */
+export const evaluateOrchestratorRules = evaluateHeroRules;
+/** @deprecated Use getHeroRuleIds instead */
+export const getOrchestratorRuleIds = getHeroRuleIds;

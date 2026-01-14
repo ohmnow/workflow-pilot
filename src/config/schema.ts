@@ -4,7 +4,7 @@
  * Defines the structure for user-configurable settings.
  */
 
-export type OperatingMode = 'minimal' | 'training' | 'guidance' | 'orchestrator';
+export type OperatingMode = 'minimal' | 'training' | 'guidance' | 'hero' | 'orchestrator';
 
 export interface WorkflowPilotConfig {
   /**
@@ -12,7 +12,7 @@ export interface WorkflowPilotConfig {
    * - minimal: Safety only (critical alerts), no context injection
    * - training: Learning assistant with explanations and guidance
    * - guidance: "Claude guiding Claude" with senior dev oversight
-   * - orchestrator: 10X pair programmer guiding from idea to production
+   * - hero: 10X pair programmer guiding from idea to production (Hero mode)
    */
   mode: OperatingMode;
 
@@ -80,9 +80,9 @@ export interface WorkflowPilotConfig {
   };
 
   /**
-   * Orchestrator mode settings (10X pair programmer)
+   * Hero mode settings (10X pair programmer)
    */
-  orchestrator: {
+  hero: {
     /** Path to feature list file */
     featureListPath: string;
     /** Path to session progress file */
@@ -139,7 +139,7 @@ export const DEFAULT_CONFIG: WorkflowPilotConfig = {
     postToolUse: true,
   },
 
-  orchestrator: {
+  hero: {
     featureListPath: 'feature_list.json',
     progressPath: 'claude-progress.txt',
     parallelEnabled: false,
@@ -199,7 +199,7 @@ export const MODE_PRESETS: Record<OperatingMode, Partial<WorkflowPilotConfig>> =
     },
   },
 
-  orchestrator: {
+  hero: {
     tiers: {
       critical: { enabled: true },
       warning: { enabled: true },
@@ -212,6 +212,24 @@ export const MODE_PRESETS: Record<OperatingMode, Partial<WorkflowPilotConfig>> =
     training: {
       askIntent: true,             // Ask what they're building
       explainSuggestions: true,    // Explain the process
+      showExamples: false,
+    },
+  },
+
+  // Backwards compatibility: 'orchestrator' maps to 'hero'
+  orchestrator: {
+    tiers: {
+      critical: { enabled: true },
+      warning: { enabled: true },
+      info: { enabled: true },
+    },
+    frequency: {
+      defaultCooldownMinutes: 5,
+      infoCooldownMinutes: 10,
+    },
+    training: {
+      askIntent: true,
+      explainSuggestions: true,
       showExamples: false,
     },
   },

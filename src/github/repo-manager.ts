@@ -146,7 +146,7 @@ export async function initializeGitHubRepo(
     // If commit fails, might be because there's nothing to commit (empty dir)
     // That's okay, we'll continue
     if (process.env.CLAUDE_HERO_DEBUG === '1') {
-      console.error('[WP Debug] Initial commit skipped:', commitResult.error);
+      console.error('[Claude Hero] Initial commit skipped:', commitResult.error);
     }
   }
 
@@ -237,7 +237,7 @@ async function runGitCommand(
 ): Promise<GitHubClientResult<string>> {
   return new Promise((resolve) => {
     if (process.env.CLAUDE_HERO_DEBUG === '1') {
-      console.error(`[WP Debug] Running: git ${args.join(' ')}`);
+      console.error(`[Claude Hero] Running: git ${args.join(' ')}`);
     }
 
     const child = spawn('git', args, {

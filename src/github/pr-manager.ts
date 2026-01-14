@@ -11,7 +11,7 @@ import {
   GitHubPR,
   GitHubClientResult,
 } from './client.js';
-import { Feature, AcceptanceCriterion } from '../orchestrator/feature-schema.js';
+import { Feature, AcceptanceCriterion } from '../hero/feature-schema.js';
 import { GitHubFeature } from './issue-manager.js';
 import { getCurrentBranch, pushBranch } from './repo-manager.js';
 

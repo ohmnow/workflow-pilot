@@ -152,9 +152,13 @@ function validateConfig(config: unknown): config is Partial<WorkflowPilotConfig>
 
   // Validate mode if present
   if (c.mode !== undefined) {
-    if (!['minimal', 'training', 'guidance', 'orchestrator'].includes(c.mode as string)) {
+    if (!['minimal', 'training', 'guidance', 'hero', 'orchestrator'].includes(c.mode as string)) {
       console.error(`[Claude Hero] Invalid mode: ${c.mode}. Using default.`);
       return false;
+    }
+    // Backwards compat: 'orchestrator' -> 'hero'
+    if (c.mode === 'orchestrator') {
+      c.mode = 'hero';
     }
   }
 
@@ -192,7 +196,7 @@ export function loadConfig(forceReload = false): WorkflowPilotConfig {
         );
 
         if (process.env.CLAUDE_HERO_DEBUG === '1') {
-          console.error(`[WP Debug] Loaded config from: ${configPath}`);
+          console.error(`[Claude Hero] Loaded config from: ${configPath}`);
         }
       }
     } catch (error) {
@@ -202,8 +206,12 @@ export function loadConfig(forceReload = false): WorkflowPilotConfig {
 
   // Check for mode override via environment (highest priority)
   if (process.env.CLAUDE_HERO_MODE) {
-    const envMode = process.env.CLAUDE_HERO_MODE as OperatingMode;
-    if (['minimal', 'training', 'guidance'].includes(envMode)) {
+    let envMode = process.env.CLAUDE_HERO_MODE as OperatingMode;
+    // Backwards compat: 'orchestrator' -> 'hero'
+    if (envMode === 'orchestrator') {
+      envMode = 'hero';
+    }
+    if (['minimal', 'training', 'guidance', 'hero'].includes(envMode)) {
       mergedConfig.mode = envMode;
     }
   }
@@ -260,6 +268,20 @@ export function getMode(): OperatingMode {
  */
 export function isTrainingMode(): boolean {
   return getMode() === 'training';
+}
+
+/**
+ * Check if we're in hero mode (10X pair programmer)
+ */
+export function isHeroMode(): boolean {
+  return getMode() === 'hero';
+}
+
+/**
+ * @deprecated Use isHeroMode() instead
+ */
+export function isOrchestratorMode(): boolean {
+  return isHeroMode();
 }
 
 /**

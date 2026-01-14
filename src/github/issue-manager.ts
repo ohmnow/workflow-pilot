@@ -13,7 +13,7 @@ import {
   GitHubIssue,
   GitHubClientResult,
 } from './client.js';
-import { Feature, AcceptanceCriterion } from '../orchestrator/feature-schema.js';
+import { Feature, AcceptanceCriterion } from '../hero/feature-schema.js';
 
 /**
  * Extended feature with GitHub integration fields

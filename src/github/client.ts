@@ -450,7 +450,7 @@ async function runGhCommand<T = void>(
 
   return new Promise((resolve) => {
     if (process.env.CLAUDE_HERO_DEBUG === '1') {
-      console.error(`[WP Debug] Running: gh ${args.join(' ')}`);
+      console.error(`[Claude Hero] Running: gh ${args.join(' ')}`);
     }
 
     const child = spawn('gh', args, {
@@ -470,8 +470,8 @@ async function runGhCommand<T = void>(
 
     child.on('close', (code) => {
       if (process.env.CLAUDE_HERO_DEBUG === '1') {
-        console.error('[WP Debug] gh completed, exit code:', code);
-        if (stderr) console.error('[WP Debug] gh stderr:', stderr);
+        console.error('[Claude Hero] gh completed, exit code:', code);
+        if (stderr) console.error('[Claude Hero] gh stderr:', stderr);
       }
 
       if (code === 0) {
@@ -495,7 +495,7 @@ async function runGhCommand<T = void>(
 
     child.on('error', (err) => {
       if (process.env.CLAUDE_HERO_DEBUG === '1') {
-        console.error('[WP Debug] gh spawn error:', err);
+        console.error('[Claude Hero] gh spawn error:', err);
       }
       resolve({
         success: false,
@@ -508,7 +508,7 @@ async function runGhCommand<T = void>(
     // Timeout
     setTimeout(() => {
       if (process.env.CLAUDE_HERO_DEBUG === '1') {
-        console.error('[WP Debug] gh timeout, killing process');
+        console.error('[Claude Hero] gh timeout, killing process');
       }
       child.kill('SIGTERM');
       resolve({ success: false, error: 'Command timed out' });

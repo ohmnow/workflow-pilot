@@ -1,7 +1,7 @@
 /**
- * Orchestrator Mode - Main Entry Point
+ * Hero Mode - Main Entry Point
  *
- * The orchestrator mode acts as a "10X Pair Programmer" that guides users
+ * Hero mode acts as a "10X Pair Programmer" that guides users
  * from idea to production-ready app using Anthropic's proven patterns:
  *
  * - Feature list with pass/fail tracking
@@ -9,7 +9,7 @@
  * - Two-agent pattern (initializer + coder)
  * - Sprint-like development cycles
  *
- * @module orchestrator
+ * @module hero
  */
 
 // Re-export types and utilities
@@ -34,17 +34,24 @@ import {
 import { FeatureList, getSprintProgress } from './feature-schema.js';
 
 /**
- * Check if orchestrator mode is currently active
+ * Check if hero mode is currently active
  */
-export function isOrchestratorMode(): boolean {
+export function isHeroMode(): boolean {
   const mode = getMode();
-  return mode === 'orchestrator';
+  return mode === 'hero';
 }
 
 /**
- * Get orchestrator context for hook processing
+ * @deprecated Use isHeroMode() instead
  */
-export interface OrchestratorContext {
+export function isOrchestratorMode(): boolean {
+  return isHeroMode();
+}
+
+/**
+ * Get hero context for hook processing
+ */
+export interface HeroContext {
   enabled: boolean;
   state: OrchestratorState | null;
   featureList: FeatureList | null;
@@ -60,12 +67,12 @@ export interface OrchestratorContext {
 }
 
 /**
- * Get the current orchestrator context
+ * Get the current hero context
  */
-export function getOrchestratorContext(
+export function getHeroContext(
   projectDir: string = process.cwd()
-): OrchestratorContext {
-  const enabled = isOrchestratorMode();
+): HeroContext {
+  const enabled = isHeroMode();
 
   if (!enabled) {
     return {
@@ -141,18 +148,18 @@ export function initializeOrchestrator(
  * Generate status summary for display
  */
 export function getStatusSummary(
-  context: OrchestratorContext
+  context: HeroContext
 ): string {
   if (!context.enabled) {
     return '';
   }
 
   if (context.needsOnboarding) {
-    return `${context.phaseEmoji} Orchestrator: Ready to start`;
+    return `${context.phaseEmoji} Hero: Ready to start`;
   }
 
   if (!context.state) {
-    return `${context.phaseEmoji} Orchestrator: Initializing...`;
+    return `${context.phaseEmoji} Hero: Initializing...`;
   }
 
   const parts: string[] = [
@@ -183,3 +190,9 @@ export function getPhaseGuidance(phase: DevelopmentPhase): string {
 
   return guidance[phase] || 'Ready to continue development.';
 }
+
+// Backwards compatibility aliases
+/** @deprecated Use HeroContext instead */
+export type OrchestratorContext = HeroContext;
+/** @deprecated Use getHeroContext instead */
+export const getOrchestratorContext = getHeroContext;

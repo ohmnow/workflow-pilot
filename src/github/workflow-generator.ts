@@ -7,7 +7,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../orchestrator/autopilot-config.js';
+import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../hero/autopilot-config.js';
 
 /**
  * Workflow generation options

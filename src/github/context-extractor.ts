@@ -6,9 +6,9 @@
  */
 
 import { GitHubIssue } from './client.js';
-import { Feature } from '../orchestrator/feature-schema.js';
+import { Feature } from '../hero/feature-schema.js';
 import { GitHubFeature } from './issue-manager.js';
-import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../orchestrator/autopilot-config.js';
+import { AutopilotConfig, DEFAULT_AUTOPILOT_CONFIG } from '../hero/autopilot-config.js';
 import {
   ScopeGuardrails,
   loadScopeGuardrailsFromClaudeMd,

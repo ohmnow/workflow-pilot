@@ -8,7 +8,7 @@ import {
   ExtractedContext,
 } from './context-extractor.js';
 import { GitHubIssue } from './client.js';
-import { DEFAULT_AUTOPILOT_CONFIG } from '../orchestrator/autopilot-config.js';
+import { DEFAULT_AUTOPILOT_CONFIG } from '../hero/autopilot-config.js';
 import { GitHubFeature } from './issue-manager.js';
 
 describe('ContextExtractor', () => {

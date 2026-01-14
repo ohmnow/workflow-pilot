@@ -62,7 +62,7 @@ function loadPresetFile(presetName: string): PresetConfig | null {
 
   if (!existsSync(presetPath)) {
     if (process.env.CLAUDE_HERO_DEBUG === '1') {
-      console.error(`[WP Debug] Preset not found: ${presetPath}`);
+      console.error(`[Claude Hero] Preset not found: ${presetPath}`);
     }
     return null;
   }
@@ -75,7 +75,7 @@ function loadPresetFile(presetName: string): PresetConfig | null {
     presetCache.set(presetName, preset);
 
     if (process.env.CLAUDE_HERO_DEBUG === '1') {
-      console.error(`[WP Debug] Loaded preset: ${presetName}`);
+      console.error(`[Claude Hero] Loaded preset: ${presetName}`);
     }
 
     return preset;

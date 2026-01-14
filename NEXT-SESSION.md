@@ -1,4 +1,4 @@
-# Next Session: Workflow Pilot GitHub Integration
+# Next Session: Claude Hero GitHub Integration
 
 ## What Was Accomplished (Tier 1: GitHub Fundamentals)
 
@@ -13,26 +13,26 @@ src/github/
 ├── release-manager.ts  # Create releases for sprints
 ├── index.ts            # Module exports + convenience functions
 
-src/orchestrator/
-└── github-hooks.ts     # GitHub context injection for orchestrator
+src/hero/
+└── github-hooks.ts     # GitHub context injection for hero
 ```
 
 ### Schema Extensions
-- `OrchestratorState` in `src/orchestrator/state.ts`:
+- `HeroState` in `src/hero/state.ts`:
   - Added `github?: GitHubState` with `repoOwner`, `repoName`, `initialized`, `issuesCreated`, `lastSync`
 
-- `Feature` in `src/orchestrator/feature-schema.ts`:
+- `Feature` in `src/hero/feature-schema.ts`:
   - Added `githubIssue?: number`
   - Added `githubPR?: number`
   - Added `githubBranch?: string`
 
 ### Hook Integration
-- `src/orchestrator/hooks.ts` now async
+- `src/hero/hooks.ts` now async
 - Injects GitHub context (open issues/PRs) into Claude's prompt
 - Setup and planning phases mention GitHub options
 
 ### Skill Update
-- `~/.claude/skills/wp/SKILL.md` updated with:
+- `~/.claude/skills/claude-hero/SKILL.md` updated with:
   - Option 5: GitHub Integration
   - GitHub setup flow documentation
   - Quick commands: "set up github", "create issues", "create pr"
@@ -47,14 +47,14 @@ src/orchestrator/
 ### Test 1: GitHub Status Check
 ```bash
 # In a new project folder
-/wp
+/claude-hero
 # Select option 5 (GitHub Integration)
 # Should check gh auth status
 ```
 
 ### Test 2: Repo Creation
 ```bash
-# In orchestrator mode with feature_list.json
+# In hero mode with feature_list.json
 # Say "set up github"
 # Should offer to create repo
 ```
@@ -68,7 +68,7 @@ src/orchestrator/
 
 ### Test 4: Context Injection
 ```bash
-# In orchestrator mode with GitHub connected
+# In hero mode with GitHub connected
 # Start a new prompt
 # Should see open issues/PRs in context
 ```
@@ -93,7 +93,7 @@ When ready to implement distributed development:
    - Update feature_list.json on merge
 
 4. **Full Distributed Development**
-   - Main orchestrator handles blocking features
+   - Main hero handles blocking features
    - Parallel workers handle non-blocking
    - Releases created automatically
 
@@ -107,7 +107,7 @@ import { isGitHubAvailable, getGitHubStatus } from './github/index.js';
 import { initializeGitHubRepo } from './github/repo-manager.js';
 
 // Create issues from features
-import { createIssuesForAllFeatures } from './orchestrator/github-hooks.js';
+import { createIssuesForAllFeatures } from './hero/github-hooks.js';
 
 // Create PR for feature
 import { createPRForFeature } from './github/pr-manager.js';
@@ -128,7 +128,7 @@ git log --oneline -5       # See recent commits
 ## Recent Commits
 ```
 f44d695 Add tests for GitHub client module
-14ef1d5 Add GitHub integration for orchestrator mode
+14ef1d5 Add GitHub integration for hero mode
 7d43c07 Fix box style: golden border lines, filled content area
 5bd6228 Update README with comprehensive feature overview
 ```

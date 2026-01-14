@@ -29,11 +29,11 @@ npm install && npm run build
 node scripts/install.js
 ```
 
-**Switch modes anytime with `/wp`:**
+**Switch modes anytime with `/claude-hero` (or `/ch`):**
 ```
-/wp              → Opens mode selection menu
-/wp training     → Enable learning mode
-/wp orchestrator → Enable 10x pair programmer
+/claude-hero           → Opens mode selection menu
+/claude-hero training  → Enable learning mode
+/claude-hero hero      → Enable 10x pair programmer (Hero mode)
 ```
 
 ## What Makes It Different
@@ -175,7 +175,7 @@ Create `.claude-hero.json` in any project:
 
 ```json
 {
-  "mode": "orchestrator",
+  "mode": "hero",
   "categories": {
     "testing": true,
     "git": true,
@@ -186,7 +186,7 @@ Create `.claude-hero.json` in any project:
 
 ### Environment Variables
 ```bash
-export CLAUDE_HERO_MODE=orchestrator  # Set mode
+export CLAUDE_HERO_MODE=hero          # Set mode (hero, training, guidance, minimal)
 export CLAUDE_HERO_DEBUG=1            # Enable debug output
 ```
 
@@ -194,7 +194,7 @@ export CLAUDE_HERO_DEBUG=1            # Enable debug output
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `mode` | `guidance` | minimal, training, guidance, orchestrator |
+| `mode` | `guidance` | minimal, training, guidance, hero |
 | `tiers.*.enabled` | `true` | Enable/disable feedback tiers |
 | `categories.*` | `true` | Enable/disable rule categories |
 | `frequency.defaultCooldownMinutes` | `10` | Minutes between warnings |
@@ -249,7 +249,7 @@ src/
 │   └── tracker.ts           # Progress tracking
 ├── rules/
 │   └── index.ts             # 25 rule definitions
-└── orchestrator/
+└── hero/
     ├── hooks.ts             # Phase-aware handlers
     └── state.ts             # Session state
 ```

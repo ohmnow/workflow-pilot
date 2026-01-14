@@ -12,7 +12,7 @@ import {
   generateSetupInstructions,
   DEFAULT_WORKFLOW_OPTIONS,
 } from './workflow-generator.js';
-import { DEFAULT_AUTOPILOT_CONFIG, AutopilotConfig } from '../orchestrator/autopilot-config.js';
+import { DEFAULT_AUTOPILOT_CONFIG, AutopilotConfig } from '../hero/autopilot-config.js';
 
 describe('WorkflowGenerator', () => {
   describe('generateWorkerWorkflow', () => {

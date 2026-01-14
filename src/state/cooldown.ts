@@ -70,7 +70,7 @@ function saveState(): void {
     writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
   } catch (error) {
     if (process.env.CLAUDE_HERO_DEBUG === '1') {
-      console.error('[WP Debug] Failed to save state:', error);
+      console.error('[Claude Hero] Failed to save state:', error);
     }
   }
 }

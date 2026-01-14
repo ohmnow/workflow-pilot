@@ -6,7 +6,7 @@
 
 import { AnalysisContext, ContextPattern } from '../analyzer/context-builder.js';
 import { matchIntent, matchIntentMultiple, hasSensitiveMention } from './intent-matcher.js';
-import { evaluateOrchestratorRules } from '../orchestrator/rules.js';
+import { evaluateHeroRules } from '../hero/rules.js';
 
 export interface RuleSuggestion {
   type: string;
@@ -565,9 +565,9 @@ export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
     }
   }
 
-  // Evaluate orchestrator-specific rules (only active in orchestrator mode)
-  const orchestratorSuggestions = evaluateOrchestratorRules(context);
-  suggestions.push(...orchestratorSuggestions);
+  // Evaluate hero-specific rules (only active in hero mode)
+  const heroSuggestions = evaluateHeroRules(context);
+  suggestions.push(...heroSuggestions);
 
   // Deduplicate and prioritize
   return deduplicateSuggestions(suggestions);

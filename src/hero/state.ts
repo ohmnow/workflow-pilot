@@ -325,8 +325,8 @@ export function advanceSprint(
  *
  * Merges config from:
  * 1. Default values
- * 2. Project config files (.workflow-pilot.json, feature_list.json)
- * 3. Orchestrator state (if overridden)
+ * 2. Project config files (.claude-hero.json, feature_list.json)
+ * 3. Hero state (if overridden)
  */
 export function getAutopilotConfig(
   projectDir: string = process.cwd()

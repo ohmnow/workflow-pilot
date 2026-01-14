@@ -7,9 +7,9 @@ import {
   labelEligibleFeatures,
   LabelEligibility,
 } from './worker-labeler.js';
-import { Feature, FeatureList } from '../orchestrator/feature-schema.js';
+import { Feature, FeatureList } from '../hero/feature-schema.js';
 import { GitHubFeature } from './issue-manager.js';
-import { DEFAULT_AUTOPILOT_CONFIG } from '../orchestrator/autopilot-config.js';
+import { DEFAULT_AUTOPILOT_CONFIG } from '../hero/autopilot-config.js';
 
 // Mock the client module
 vi.mock('./client.js', () => ({
