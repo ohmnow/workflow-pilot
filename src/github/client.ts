@@ -459,6 +459,16 @@ async function runGhCommand<T = void>(
 
     let stdout = '';
     let stderr = '';
+    let resolved = false;
+
+    // Helper to resolve only once and clear timeout
+    const resolveOnce = (result: GitHubClientResult<T>) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve(result);
+      }
+    };
 
     child.stdout?.on('data', (data) => {
       stdout += data.toString();
@@ -478,15 +488,15 @@ async function runGhCommand<T = void>(
         if (parseJson && stdout.trim()) {
           try {
             const data = JSON.parse(stdout.trim()) as T;
-            resolve({ success: true, data });
+            resolveOnce({ success: true, data });
           } catch {
-            resolve({ success: false, error: 'Failed to parse JSON response' });
+            resolveOnce({ success: false, error: 'Failed to parse JSON response' });
           }
         } else {
-          resolve({ success: true });
+          resolveOnce({ success: true });
         }
       } else {
-        resolve({
+        resolveOnce({
           success: false,
           error: stderr.trim() || `gh command failed with exit code ${code}`,
         });
@@ -497,7 +507,7 @@ async function runGhCommand<T = void>(
       if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[Claude Hero] gh spawn error:', err);
       }
-      resolve({
+      resolveOnce({
         success: false,
         error: err.message === 'spawn gh ENOENT'
           ? 'gh CLI not found. Install from https://cli.github.com/'
@@ -506,12 +516,12 @@ async function runGhCommand<T = void>(
     });
 
     // Timeout
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[Claude Hero] gh timeout, killing process');
       }
       child.kill('SIGTERM');
-      resolve({ success: false, error: 'Command timed out' });
+      resolveOnce({ success: false, error: 'Command timed out' });
     }, timeout);
   });
 }

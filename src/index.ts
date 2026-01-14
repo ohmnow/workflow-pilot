@@ -54,14 +54,24 @@ interface HookOutput {
 
 /**
  * Map rule categories to config category names
+ *
+ * Rule categories from rules/index.ts are mapped to config categories.
+ * New rule categories should be added here with appropriate mappings.
  */
 function mapCategory(ruleCategory: string): 'testing' | 'git' | 'security' | 'claudeCode' | 'refactoring' {
   const mapping: Record<string, 'testing' | 'git' | 'security' | 'claudeCode' | 'refactoring'> = {
+    // Direct mappings
     'testing': 'testing',
     'git': 'git',
     'security': 'security',
     'claude-code': 'claudeCode',
     'refactoring': 'refactoring',
+    // Additional rule categories mapped to closest config category
+    'type-safety': 'claudeCode',      // Type safety is a coding best practice
+    'error-handling': 'claudeCode',   // Error handling is a coding best practice
+    'documentation': 'claudeCode',    // Documentation is a coding best practice
+    'production': 'security',         // Production readiness relates to security/stability
+    'code-quality': 'refactoring',    // Code quality relates to refactoring
   };
   return mapping[ruleCategory] || 'claudeCode';
 }
@@ -332,8 +342,7 @@ async function main(): Promise<void> {
       });
 
       // Also inject context to Claude via stdout
-      // Pass training mode config if enabled
-      const config = loadConfig();
+      // Pass training mode config if enabled (reuse config from line 196)
       const formattedSuggestion = formatSuggestion(warningSuggestions, context, {
         trainingMode: isTrainingMode() ? {
           explainSuggestions: config.training.explainSuggestions,
@@ -371,7 +380,31 @@ async function main(): Promise<void> {
     process.exit(0);
   } catch (error) {
     // Log error but don't fail the hook (allow Claude to continue)
-    console.error('Claude Hero Error:', error);
+    // We intentionally exit with 0 to avoid blocking the user's workflow
+    // Plugin errors should not prevent Claude from functioning
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    console.error(`[Claude Hero] Error: ${errorMessage}`);
+
+    if (process.env.CLAUDE_HERO_DEBUG === '1' && errorStack) {
+      console.error('[Claude Hero] Stack trace:', errorStack);
+    }
+
+    // Log to file for post-mortem debugging
+    try {
+      const fs = await import('fs');
+      const logFile = '/tmp/claude-hero.log';
+      const timestamp = new Date().toISOString();
+      fs.appendFileSync(logFile, `${timestamp} - ERROR: ${errorMessage}\n`);
+      if (errorStack) {
+        fs.appendFileSync(logFile, `${errorStack}\n`);
+      }
+    } catch {
+      // Ignore logging errors
+    }
+
+    // Exit with 0 to allow Claude to continue (graceful degradation)
     process.exit(0);
   }
 }

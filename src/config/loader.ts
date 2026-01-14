@@ -31,10 +31,23 @@ function findConfigPaths(): string[] {
   const paths: string[] = [];
 
   // 1. Built-in default (lowest priority)
+  // Look for default.json relative to the module location or current working directory
   const possibleDefaults = [
     join(process.cwd(), 'config', 'default.json'),
-    '/Users/chris/cc-projects/claude code terminal plugin/config/default.json',
   ];
+
+  // Also check relative to this module's location (for installed packages)
+  // __dirname equivalent for ESM: use fileURLToPath if available, or fallback to dirname
+  try {
+    // For CommonJS compatibility, use __dirname if available
+    if (typeof __dirname !== 'undefined') {
+      const packageRoot = join(__dirname, '..', '..', 'config', 'default.json');
+      possibleDefaults.push(packageRoot);
+    }
+  } catch {
+    // __dirname may not be available in all environments
+  }
+
   for (const path of possibleDefaults) {
     if (existsSync(path)) {
       paths.push(path);

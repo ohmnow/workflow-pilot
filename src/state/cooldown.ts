@@ -3,13 +3,18 @@
  *
  * Tracks when rules/suggestions were last triggered to prevent alert fatigue.
  * State is persisted to disk for cross-invocation consistency.
+ *
+ * Note: Uses file locking to prevent race conditions between concurrent hook invocations.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { getCooldownMinutes } from '../config/loader.js';
 import { classifyFile, FileType, hasCodeFiles } from '../utils/file-classifier.js';
 
 const STATE_FILE = '/tmp/claude-hero-state.json';
+const LOCK_FILE = '/tmp/claude-hero-state.lock';
+const LOCK_TIMEOUT_MS = 5000; // Max time to wait for lock
+const LOCK_STALE_MS = 10000; // Consider lock stale after this time
 
 /**
  * Record of a file change in the session
@@ -31,43 +36,96 @@ interface CooldownState {
   fileChanges?: FileChange[];
 }
 
-let state: CooldownState | null = null;
+// In-memory cache - only valid within a single process invocation
+let stateCache: CooldownState | null = null;
 
 /**
- * Load state from disk
+ * Acquire a simple file-based lock
+ * Returns true if lock acquired, false if timed out
  */
-function loadState(): CooldownState {
-  if (state) {
-    return state;
+function acquireLock(): boolean {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < LOCK_TIMEOUT_MS) {
+    try {
+      // Check for stale lock
+      if (existsSync(LOCK_FILE)) {
+        const lockStat = readFileSync(LOCK_FILE, 'utf-8');
+        const lockTime = parseInt(lockStat, 10);
+        if (!isNaN(lockTime) && Date.now() - lockTime > LOCK_STALE_MS) {
+          // Lock is stale, remove it
+          try {
+            unlinkSync(LOCK_FILE);
+          } catch {
+            // Another process may have removed it
+          }
+        }
+      }
+
+      // Try to create lock file (atomic on most filesystems)
+      writeFileSync(LOCK_FILE, String(Date.now()), { flag: 'wx' });
+      return true;
+    } catch {
+      // Lock exists, wait and retry
+      // Use a small random delay to reduce contention
+      const delay = 10 + Math.random() * 20;
+      const waitUntil = Date.now() + delay;
+      while (Date.now() < waitUntil) {
+        // Busy wait for short duration
+      }
+    }
   }
 
+  return false;
+}
+
+/**
+ * Release the file lock
+ */
+function releaseLock(): void {
+  try {
+    if (existsSync(LOCK_FILE)) {
+      unlinkSync(LOCK_FILE);
+    }
+  } catch {
+    // Ignore errors during cleanup
+  }
+}
+
+/**
+ * Load state from disk (always reads fresh to avoid stale cache issues)
+ */
+function loadState(): CooldownState {
+  // Always read from disk to get latest state from other processes
   if (existsSync(STATE_FILE)) {
     try {
       const content = readFileSync(STATE_FILE, 'utf-8');
-      state = JSON.parse(content);
-      return state!;
+      const parsed = JSON.parse(content) as CooldownState;
+      stateCache = parsed;
+      return parsed;
     } catch {
       // Corrupted state, start fresh
     }
   }
 
-  state = {
+  const newState: CooldownState = {
     lastTriggered: {},
     sessionStarted: Date.now(),
     suggestionsShown: 0,
   };
+  stateCache = newState;
 
-  return state;
+  return newState;
 }
 
 /**
  * Save state to disk
  */
 function saveState(): void {
-  if (!state) return;
+  if (!stateCache) return;
 
   try {
-    writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+    writeFileSync(STATE_FILE, JSON.stringify(stateCache, null, 2));
   } catch (error) {
     if (process.env.CLAUDE_HERO_DEBUG === '1') {
       console.error('[Claude Hero] Failed to save state:', error);
@@ -101,10 +159,21 @@ export function canTrigger(ruleId: string): boolean {
  * @param ruleId - The rule identifier
  */
 export function recordTrigger(ruleId: string): void {
-  const currentState = loadState();
-  currentState.lastTriggered[ruleId] = Date.now();
-  currentState.suggestionsShown++;
-  saveState();
+  if (!acquireLock()) {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
+      console.error('[Claude Hero] Failed to acquire lock for recordTrigger');
+    }
+    return;
+  }
+
+  try {
+    const currentState = loadState();
+    currentState.lastTriggered[ruleId] = Date.now();
+    currentState.suggestionsShown++;
+    saveState();
+  } finally {
+    releaseLock();
+  }
 }
 
 /**
@@ -162,21 +231,43 @@ export function getTotalSuggestionsShown(): number {
  * Reset all cooldowns (useful for testing or mode changes)
  */
 export function resetCooldowns(): void {
-  state = {
-    lastTriggered: {},
-    sessionStarted: Date.now(),
-    suggestionsShown: 0,
-  };
-  saveState();
+  if (!acquireLock()) {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
+      console.error('[Claude Hero] Failed to acquire lock for resetCooldowns');
+    }
+    return;
+  }
+
+  try {
+    stateCache = {
+      lastTriggered: {},
+      sessionStarted: Date.now(),
+      suggestionsShown: 0,
+    };
+    saveState();
+  } finally {
+    releaseLock();
+  }
 }
 
 /**
  * Reset cooldown for a specific rule
  */
 export function resetRuleCooldown(ruleId: string): void {
-  const currentState = loadState();
-  delete currentState.lastTriggered[ruleId];
-  saveState();
+  if (!acquireLock()) {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
+      console.error('[Claude Hero] Failed to acquire lock for resetRuleCooldown');
+    }
+    return;
+  }
+
+  try {
+    const currentState = loadState();
+    delete currentState.lastTriggered[ruleId];
+    saveState();
+  } finally {
+    releaseLock();
+  }
 }
 
 /**
@@ -185,29 +276,44 @@ export function resetRuleCooldown(ruleId: string): void {
  * @param filePath - Path to the file that was changed
  */
 export function recordFileChange(filePath: string): void {
-  const currentState = loadState();
-
-  if (!currentState.fileChanges) {
-    currentState.fileChanges = [];
+  if (!acquireLock()) {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
+      console.error('[Claude Hero] Failed to acquire lock for recordFileChange');
+    }
+    return;
   }
 
-  // Classify the file
-  const classification = classifyFile(filePath);
+  try {
+    const currentState = loadState();
 
-  // Add to changes (avoid duplicates by checking path)
-  const existingIndex = currentState.fileChanges.findIndex(fc => fc.path === filePath);
-  if (existingIndex >= 0) {
-    // Update timestamp for existing file
-    currentState.fileChanges[existingIndex].timestamp = Date.now();
-  } else {
-    currentState.fileChanges.push({
-      path: filePath,
-      type: classification.type,
-      timestamp: Date.now(),
-    });
+    if (!currentState.fileChanges) {
+      currentState.fileChanges = [];
+    }
+
+    // Classify the file
+    const classification = classifyFile(filePath);
+
+    // Add to changes (avoid duplicates by checking path)
+    const existingIndex = currentState.fileChanges.findIndex(fc => fc.path === filePath);
+    if (existingIndex >= 0) {
+      // Update timestamp for existing file
+      currentState.fileChanges[existingIndex].timestamp = Date.now();
+    } else {
+      // Limit file changes to prevent unbounded growth (keep last 500)
+      if (currentState.fileChanges.length >= 500) {
+        currentState.fileChanges = currentState.fileChanges.slice(-400);
+      }
+      currentState.fileChanges.push({
+        path: filePath,
+        type: classification.type,
+        timestamp: Date.now(),
+      });
+    }
+
+    saveState();
+  } finally {
+    releaseLock();
   }
-
-  saveState();
 }
 
 /**
@@ -261,7 +367,18 @@ export function getFileChangeStats(): Record<FileType, number> {
  * Clear file changes (called when tests are run)
  */
 export function clearFileChanges(): void {
-  const currentState = loadState();
-  currentState.fileChanges = [];
-  saveState();
+  if (!acquireLock()) {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
+      console.error('[Claude Hero] Failed to acquire lock for clearFileChanges');
+    }
+    return;
+  }
+
+  try {
+    const currentState = loadState();
+    currentState.fileChanges = [];
+    saveState();
+  } finally {
+    releaseLock();
+  }
 }

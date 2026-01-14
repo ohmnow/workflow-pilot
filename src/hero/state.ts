@@ -116,7 +116,12 @@ export function loadState(projectDir: string = process.cwd()): OrchestratorState
     const state = JSON.parse(content) as OrchestratorState;
 
     return state;
-  } catch {
+  } catch (error) {
+    // Log error for debugging - malformed state file
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[Claude Hero] Failed to load state from ${statePath}: ${errorMessage}`);
+    }
     return null;
   }
 }
@@ -222,7 +227,12 @@ export function loadFeatureList(
 
     const content = fs.readFileSync(featureListPath, 'utf-8');
     return JSON.parse(content) as FeatureList;
-  } catch {
+  } catch (error) {
+    // Log error for debugging - malformed feature list file
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[Claude Hero] Failed to load feature list from ${featureListPath}: ${errorMessage}`);
+    }
     return null;
   }
 }

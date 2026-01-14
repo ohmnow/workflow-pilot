@@ -92,8 +92,12 @@ export function formatBox(lines: string[], options: BoxOptions = {}): string[] {
 
   // Calculate content width (max line length + padding)
   const contentLines = lines.filter(line => line !== undefined);
+
+  // Calculate max line width, handling empty content gracefully
+  const lineWidths = contentLines.map(line => displayWidth(line));
+  const maxContentWidth = lineWidths.length > 0 ? Math.max(...lineWidths) : 0;
   const maxLineWidth = Math.max(
-    ...contentLines.map(line => displayWidth(line)),
+    maxContentWidth,
     title ? displayWidth(title) + 4 : 0, // Account for title + icon
     minWidth - (padding * 2) - 2 // Minimum content area
   );

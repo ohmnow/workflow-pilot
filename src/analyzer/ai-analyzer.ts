@@ -148,6 +148,16 @@ async function analyzeWithCLI(prompt: string): Promise<string | null> {
 
     let stdout = '';
     let stderr = '';
+    let resolved = false;
+
+    // Helper to resolve only once and clear timeout
+    const resolveOnce = (value: string | null) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve(value);
+      }
+    };
 
     child.stdout?.on('data', (data) => {
       stdout += data.toString();
@@ -162,12 +172,12 @@ async function analyzeWithCLI(prompt: string): Promise<string | null> {
         console.error('[Claude Hero] CLI completed, exit code:', code);
       }
       if (code === 0 && stdout) {
-        resolve(stdout.trim());
+        resolveOnce(stdout.trim());
       } else {
         if (process.env.CLAUDE_HERO_DEBUG === '1') {
           console.error('[Claude Hero] CLI stderr:', stderr);
         }
-        resolve(null);
+        resolveOnce(null);
       }
     });
 
@@ -175,16 +185,16 @@ async function analyzeWithCLI(prompt: string): Promise<string | null> {
       if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[Claude Hero] CLI spawn error:', err);
       }
-      resolve(null);
+      resolveOnce(null);
     });
 
     // 45 second timeout (hooks have 60s limit)
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[Claude Hero] CLI timeout, killing process');
       }
       child.kill('SIGTERM');
-      resolve(null);
+      resolveOnce(null);
     }, 45000);
   });
 }

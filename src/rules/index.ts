@@ -575,13 +575,17 @@ export function evaluateRules(context: AnalysisContext): RuleSuggestion[] {
 
 /**
  * Remove duplicate suggestions, keeping highest priority
+ *
+ * Deduplication is done by ruleId (if available) to allow multiple
+ * suggestions from the same category but different rules.
  */
 function deduplicateSuggestions(suggestions: RuleSuggestion[]): RuleSuggestion[] {
   const priorityOrder = { high: 3, medium: 2, low: 1 };
   const seen = new Map<string, RuleSuggestion>();
 
   for (const suggestion of suggestions) {
-    const key = suggestion.type;
+    // Use ruleId for deduplication if available, otherwise fall back to source-type
+    const key = suggestion.ruleId || `${suggestion.source}-${suggestion.type}`;
     const existing = seen.get(key);
 
     if (!existing || priorityOrder[suggestion.priority] > priorityOrder[existing.priority]) {

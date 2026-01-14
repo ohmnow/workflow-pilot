@@ -94,8 +94,11 @@ function handleOnboarding(
   prompt: string,
   projectDir: string
 ): OrchestratorHookResult {
-  // Initialize state
-  const state = initializeOrchestrator(projectDir);
+  // Initialize state for the new project
+  initializeOrchestrator(projectDir);
+
+  // Get the freshly initialized context
+  const context = getOrchestratorContext(projectDir);
 
   const contextInjection = `
 ## Orchestrator Mode Active
@@ -128,7 +131,7 @@ User's initial request: "${prompt}"
 
   return {
     contextInjection,
-    statusSummary: getStatusSummary(getOrchestratorContext(projectDir)),
+    statusSummary: getStatusSummary(context),
     userMessage: getPhaseGuidance('onboarding'),
   };
 }
@@ -267,8 +270,9 @@ No feature list found. Create feature_list.json to track progress.
 `;
 
   // Current feature focus
-  if (context.state.currentFeatureId) {
-    const current = features.find(f => f.id === context.state!.currentFeatureId);
+  const currentFeatureId = context.state.currentFeatureId;
+  if (currentFeatureId) {
+    const current = features.find(f => f.id === currentFeatureId);
     if (current) {
       contextStr += `**Current Focus:** ${current.name} (${current.id})\n\n`;
     }

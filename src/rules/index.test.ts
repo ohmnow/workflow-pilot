@@ -156,7 +156,7 @@ describe('Rule Engine', () => {
   });
 
   describe('Deduplication', () => {
-    it('keeps highest priority when same category triggers multiple rules', () => {
+    it('keeps multiple rules from same category with different ruleIds', () => {
       const context = createContext({
         patterns: [{ type: 'code-without-tests', confidence: 0.8 }],
         toolInfo: {
@@ -169,9 +169,35 @@ describe('Rule Engine', () => {
       const suggestions = evaluateRules(context);
       const testingSuggestions = suggestions.filter(s => s.type === 'testing');
 
-      // Should dedupe to highest priority
-      expect(testingSuggestions.length).toBe(1);
-      expect(testingSuggestions[0].priority).toBe('high');
+      // Multiple rules from same category should be kept (different ruleIds)
+      // 'test-after-code' (medium priority) and 'test-before-commit' (high priority)
+      expect(testingSuggestions.length).toBe(2);
+
+      // Both should have their original priorities preserved
+      const ruleIds = testingSuggestions.map(s => s.ruleId);
+      expect(ruleIds).toContain('test-after-code');
+      expect(ruleIds).toContain('test-before-commit');
+    });
+
+    it('deduplicates when same ruleId appears multiple times', () => {
+      // This tests the deduplication logic directly by checking that
+      // if the same ruleId would appear twice, only the highest priority is kept
+      // (In practice this shouldn't happen, but tests the dedup logic)
+      const context = createContext({
+        patterns: [{ type: 'code-without-tests', confidence: 0.8 }],
+        toolInfo: {
+          name: 'Edit',
+          input: { file_path: '/test.ts', new_string: 'code' },
+        },
+        lastTestRun: undefined,
+      });
+
+      const suggestions = evaluateRules(context);
+
+      // Get unique ruleIds - should have no duplicates
+      const ruleIds = suggestions.map(s => s.ruleId).filter(Boolean);
+      const uniqueRuleIds = [...new Set(ruleIds)];
+      expect(ruleIds.length).toBe(uniqueRuleIds.length);
     });
   });
 

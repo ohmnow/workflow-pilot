@@ -154,26 +154,38 @@ function normalize(text: string): string {
  * - Returns the command with commit messages stripped
  */
 function extractGitCommandArgs(command: string): string {
-  const normalized = normalize(command);
+  // Safety: limit input length to prevent regex DoS on extremely long strings
+  const MAX_COMMAND_LENGTH = 10000;
+  const safeCommand = command.length > MAX_COMMAND_LENGTH
+    ? command.slice(0, MAX_COMMAND_LENGTH)
+    : command;
+
+  const normalized = normalize(safeCommand);
 
   // If it's a git commit with -m (including combined flags like -am, -sm, etc.)
   // Match: git commit -m, -am, -sm, --message, etc.
   const hasMessageFlag = /-m\s|--message\s|-[a-z]*m[a-z]*\s/.test(normalized);
 
   if (normalized.includes('git commit') && hasMessageFlag) {
-    // Remove everything after -m flag (the message)
-    // Handle both quoted and unquoted messages
-    return normalized
-      .replace(/-m\s*"[^"]*"/g, '')       // -m "message"
-      .replace(/-m\s*'[^']*'/g, '')       // -m 'message'
-      .replace(/-m\s*\$\([^)]*\)/g, '')   // -m $(heredoc)
-      .replace(/-[a-z]*m\s*"[^"]*"/g, '') // -am "message", -sm "message"
-      .replace(/-[a-z]*m\s*'[^']*'/g, '') // -am 'message'
-      .replace(/--message\s*"[^"]*"/g, '')// --message "message"
-      .replace(/--message\s*'[^']*'/g, '')// --message 'message'
-      .replace(/-m\s*[^\s-]+/g, '')       // -m message (unquoted, single word)
-      .replace(/-[a-z]*m\s*[^\s-]+/g, '') // -am message (unquoted)
-      .replace(/--message\s*[^\s-]+/g, ''); // --message msg (unquoted)
+    try {
+      // Remove everything after -m flag (the message)
+      // Handle both quoted and unquoted messages
+      return normalized
+        .replace(/-m\s*"[^"]*"/g, '')       // -m "message"
+        .replace(/-m\s*'[^']*'/g, '')       // -m 'message'
+        .replace(/-m\s*\$\([^)]*\)/g, '')   // -m $(heredoc)
+        .replace(/-[a-z]*m\s*"[^"]*"/g, '') // -am "message", -sm "message"
+        .replace(/-[a-z]*m\s*'[^']*'/g, '') // -am 'message'
+        .replace(/--message\s*"[^"]*"/g, '')// --message "message"
+        .replace(/--message\s*'[^']*'/g, '')// --message 'message'
+        .replace(/-m\s*[^\s-]+/g, '')       // -m message (unquoted, single word)
+        .replace(/-[a-z]*m\s*[^\s-]+/g, '') // -am message (unquoted)
+        .replace(/--message\s*[^\s-]+/g, ''); // --message msg (unquoted)
+    } catch {
+      // If regex fails for any reason, return normalized string
+      // This ensures the security check still runs on the raw command
+      return normalized;
+    }
   }
 
   return normalized;
