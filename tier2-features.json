@@ -1,5 +1,5 @@
 {
-  "project": "Workflow Pilot - Tier 2: Autopilot",
+  "project": "Claude Hero - Tier 2: Autopilot",
   "version": "0.4.0",
   "sprints": [
     {
@@ -16,7 +16,7 @@
           "acceptance": [
             "AutopilotConfig type defined in config schema",
             "Default values: prStrategy='review', maxWorkers=3, autoLabel=false",
-            "Config can be read from feature_list.json or .workflow-pilot.json"
+            "Config can be read from feature_list.json or .claude-hero.json"
           ]
         },
         {

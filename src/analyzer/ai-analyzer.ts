@@ -99,7 +99,7 @@ export async function analyzeWithAI(context: AnalysisContext): Promise<AISuggest
       }
     } catch (error) {
       // Fall through to CLI fallback
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] API failed, trying CLI fallback:', error);
       }
     }
@@ -107,7 +107,7 @@ export async function analyzeWithAI(context: AnalysisContext): Promise<AISuggest
 
   // Fallback: Use claude CLI with user's existing authentication
   // Only attempt if explicitly enabled (CLI has startup overhead)
-  if (process.env.WORKFLOW_PILOT_USE_CLI === '1') {
+  if (process.env.CLAUDE_HERO_USE_CLI === '1') {
     try {
       const cliResponse = await analyzeWithCLI(prompt);
       if (cliResponse) {
@@ -115,7 +115,7 @@ export async function analyzeWithAI(context: AnalysisContext): Promise<AISuggest
         return suggestions.map((s) => ({ ...s, source: 'ai' as const, level: 'warning' as const }));
       }
     } catch (error) {
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] CLI fallback failed:', error);
       }
     }
@@ -138,7 +138,7 @@ async function analyzeWithCLI(prompt: string): Promise<string | null> {
       prompt
     ];
 
-    if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
       console.error('[WP Debug] Spawning claude CLI...');
     }
 
@@ -158,13 +158,13 @@ async function analyzeWithCLI(prompt: string): Promise<string | null> {
     });
 
     child.on('close', (code) => {
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] CLI completed, exit code:', code);
       }
       if (code === 0 && stdout) {
         resolve(stdout.trim());
       } else {
-        if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+        if (process.env.CLAUDE_HERO_DEBUG === '1') {
           console.error('[WP Debug] CLI stderr:', stderr);
         }
         resolve(null);
@@ -172,7 +172,7 @@ async function analyzeWithCLI(prompt: string): Promise<string | null> {
     });
 
     child.on('error', (err) => {
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] CLI spawn error:', err);
       }
       resolve(null);
@@ -180,7 +180,7 @@ async function analyzeWithCLI(prompt: string): Promise<string | null> {
 
     // 45 second timeout (hooks have 60s limit)
     setTimeout(() => {
-      if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+      if (process.env.CLAUDE_HERO_DEBUG === '1') {
         console.error('[WP Debug] CLI timeout, killing process');
       }
       child.kill('SIGTERM');

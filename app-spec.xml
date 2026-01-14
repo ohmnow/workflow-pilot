@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <application>
   <metadata>
-    <name>Claude Code Workflow Pilot</name>
+    <name>Claude Hero</name>
     <version>0.1.0</version>
     <type>claude-code-plugin</type>
     <description>

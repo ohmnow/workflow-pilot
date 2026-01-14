@@ -1,5 +1,5 @@
 {
-  "project": "Workflow Pilot - Tier 3: Operational Observability",
+  "project": "Claude Hero - Tier 3: Operational Observability",
   "version": "0.5.0",
   "sprints": [
     {
@@ -15,7 +15,7 @@
           "status": "complete",
           "acceptance": [
             "EventLogger class with log(event) and query(filter) methods",
-            "Events stored in .workflow-pilot-events.json",
+            "Events stored in .claude-hero-events.json",
             "Worker events: worker.start, worker.complete, worker.fail, worker.timeout",
             "PR events: pr.created, pr.ci_pass, pr.ci_fail, pr.merged",
             "Each event has: type, timestamp, data (context-specific)",

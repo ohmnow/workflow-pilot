@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Workflow Pilot Uninstaller
+ * Claude Hero Uninstaller
  *
  * Removes the plugin hooks from Claude Code settings
  */
@@ -12,7 +12,7 @@ const PLUGIN_DIR = path.resolve(__dirname, '..');
 const CLAUDE_SETTINGS_PATH = path.join(process.env.HOME, '.claude', 'settings.json');
 
 function log(msg) {
-  console.log(`[Workflow Pilot] ${msg}`);
+  console.log(`[Claude Hero] ${msg}`);
 }
 
 function main() {
@@ -38,10 +38,10 @@ function main() {
       if (Array.isArray(hookList)) {
         const filtered = hookList.filter(hook => {
           const hookStr = JSON.stringify(hook);
-          const isWorkflowPilot = hookStr.includes(PLUGIN_DIR) ||
-                                   hookStr.includes('workflow-pilot') ||
+          const isClaudeHero = hookStr.includes(PLUGIN_DIR) ||
+                                   hookStr.includes('claude-hero') ||
                                    hookStr.includes('claude code terminal plugin');
-          if (isWorkflowPilot) {
+          if (isClaudeHero) {
             modified = true;
             return false;
           }
@@ -61,7 +61,7 @@ function main() {
     }
 
     if (modified) {
-      log('Removing Workflow Pilot hooks...');
+      log('Removing Claude Hero hooks...');
       fs.writeFileSync(
         CLAUDE_SETTINGS_PATH,
         JSON.stringify(settings, null, 2),
@@ -69,11 +69,11 @@ function main() {
       );
       log('✅ Uninstallation complete!');
     } else {
-      log('Workflow Pilot hooks not found in settings.');
+      log('Claude Hero hooks not found in settings.');
     }
 
   } catch (err) {
-    console.error(`[Workflow Pilot Error] Uninstallation failed: ${err.message}`);
+    console.error(`[Claude Hero Error] Uninstallation failed: ${err.message}`);
     process.exit(1);
   }
 }

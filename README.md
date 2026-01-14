@@ -1,8 +1,8 @@
-# Workflow Pilot
+# Claude Hero
 
-**Your AI coding copilot that grows with you** - from learning best practices to shipping production code autonomously.
+**Claude Code Hero - Your AI coding copilot that grows with you** - from learning best practices to shipping production code autonomously.
 
-Workflow Pilot is a Claude Code plugin that acts as a senior developer watching over your shoulder. It catches mistakes before they happen, teaches you professional practices, and when you're ready, becomes a 10x pair programmer that guides complex projects from idea to production.
+Claude Hero is a Claude Code plugin that acts as a senior developer watching over your shoulder. It catches mistakes before they happen, teaches you professional practices, and when you're ready, becomes a 10x pair programmer that guides complex projects from idea to production.
 
 ## The Journey
 
@@ -21,8 +21,8 @@ Learning → Guidance → Autonomy
 
 ```bash
 # Clone and build
-git clone https://github.com/ohmnow/workflow-pilot.git
-cd workflow-pilot
+git clone https://github.com/ohmnow/claude-hero.git
+cd claude-hero
 npm install && npm run build
 
 # Install hooks into Claude Code
@@ -40,7 +40,7 @@ node scripts/install.js
 
 ### 1. It Learns Your Project
 
-Workflow Pilot auto-detects your project type and adjusts its guidance:
+Claude Hero auto-detects your project type and adjusts its guidance:
 
 | Detected | Preset Applied |
 |----------|----------------|
@@ -75,7 +75,7 @@ Smart cooldowns and context-aware triggers mean you only see suggestions when th
 
 ```
 ╭──────────────────────────────────────────╮
-│ ⚠️ Workflow Pilot                        │
+│ ⚠️ Claude Hero                           │
 │                                          │
 │ ⚠ Consider running tests                 │
 │   5 code files changed without test run  │
@@ -86,7 +86,7 @@ Smart cooldowns and context-aware triggers mean you only see suggestions when th
 
 ### 4. It Becomes Your 10x Pair Programmer
 
-In **Orchestrator mode**, Workflow Pilot acts as an autonomous senior developer:
+In **Orchestrator mode**, Claude Hero acts as an autonomous senior developer:
 
 - **Proactive planning** - Breaks down complex tasks before you ask
 - **PRD tracking** - Parses your spec files and tracks progress
@@ -132,7 +132,7 @@ In **Orchestrator mode**, Workflow Pilot acts as an autonomous senior developer:
 ## Features
 
 ### Visual Feedback
-Distinctive rounded boxes with golden background make Workflow Pilot messages instantly recognizable:
+Distinctive rounded boxes with golden background make Claude Hero messages instantly recognizable:
 
 - 🚨 **Critical** - Red alerts that block actions
 - ⚠️ **Warning** - Workflow suggestions
@@ -151,7 +151,7 @@ Auto-detects and adapts to:
 Parse markdown spec files and track progress:
 ```markdown
 ## Requirements
-- [ ] User authentication  ← Workflow Pilot tracks these
+- [ ] User authentication  ← Claude Hero tracks these
 - [x] Landing page
 - [ ] Dashboard
 ```
@@ -171,7 +171,7 @@ Time-based throttling prevents alert fatigue:
 ## Configuration
 
 ### Project-Level Config
-Create `.workflow-pilot.json` in any project:
+Create `.claude-hero.json` in any project:
 
 ```json
 {
@@ -186,8 +186,8 @@ Create `.workflow-pilot.json` in any project:
 
 ### Environment Variables
 ```bash
-export WORKFLOW_PILOT_MODE=orchestrator  # Set mode
-export WORKFLOW_PILOT_DEBUG=1            # Enable debug output
+export CLAUDE_HERO_MODE=orchestrator  # Set mode
+export CLAUDE_HERO_DEBUG=1            # Enable debug output
 ```
 
 ### Full Config Options
@@ -212,9 +212,9 @@ Add to `~/.claude/settings.json`:
 ```json
 {
   "hooks": {
-    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "node /path/to/workflow-pilot/dist/index.js"}]}],
-    "PreToolUse": [{"matcher": ".*", "hooks": [{"type": "command", "command": "node /path/to/workflow-pilot/dist/index.js"}]}],
-    "PostToolUse": [{"matcher": ".*", "hooks": [{"type": "command", "command": "node /path/to/workflow-pilot/dist/index.js"}]}]
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "node /path/to/claude-hero/dist/index.js"}]}],
+    "PreToolUse": [{"matcher": ".*", "hooks": [{"type": "command", "command": "node /path/to/claude-hero/dist/index.js"}]}],
+    "PostToolUse": [{"matcher": ".*", "hooks": [{"type": "command", "command": "node /path/to/claude-hero/dist/index.js"}]}]
   }
 }
 ```
@@ -230,7 +230,7 @@ npm run lint       # Lint code
 
 ### Debug Mode
 ```bash
-export WORKFLOW_PILOT_DEBUG=1
+export CLAUDE_HERO_DEBUG=1
 ```
 
 ### Project Structure

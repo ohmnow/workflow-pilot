@@ -128,7 +128,7 @@ export function parseTimeout(timeout: string): number {
  * Configuration file names to search for
  */
 const CONFIG_FILES = [
-  '.workflow-pilot.json',
+  '.claude-hero.json',
   'feature_list.json',
 ];
 
@@ -136,7 +136,7 @@ const CONFIG_FILES = [
  * Load autopilot config from project directory
  *
  * Searches for config in:
- * 1. .workflow-pilot.json (project-level config)
+ * 1. .claude-hero.json (project-level config)
  * 2. feature_list.json (embedded in config section)
  *
  * Later sources override earlier ones.
@@ -170,13 +170,13 @@ export function loadAutopilotConfig(
 }
 
 /**
- * Save autopilot config to .workflow-pilot.json
+ * Save autopilot config to .claude-hero.json
  */
 export function saveAutopilotConfig(
   config: AutopilotConfig,
   projectDir: string = process.cwd()
 ): boolean {
-  const configPath = path.join(projectDir, '.workflow-pilot.json');
+  const configPath = path.join(projectDir, '.claude-hero.json');
 
   try {
     let existing: Record<string, unknown> = {};

@@ -55,7 +55,7 @@ export const DEFAULT_PROTECTED_PATHS: string[] = [
   // Orchestrator state
   'feature_list.json',
   'tier2-features.json',
-  '.workflow-pilot.json',
+  '.claude-hero.json',
 
   // Environment and secrets
   '.env',

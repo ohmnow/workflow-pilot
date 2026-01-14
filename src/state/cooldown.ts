@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { getCooldownMinutes } from '../config/loader.js';
 import { classifyFile, FileType, hasCodeFiles } from '../utils/file-classifier.js';
 
-const STATE_FILE = '/tmp/workflow-pilot-state.json';
+const STATE_FILE = '/tmp/claude-hero-state.json';
 
 /**
  * Record of a file change in the session
@@ -69,7 +69,7 @@ function saveState(): void {
   try {
     writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
   } catch (error) {
-    if (process.env.WORKFLOW_PILOT_DEBUG === '1') {
+    if (process.env.CLAUDE_HERO_DEBUG === '1') {
       console.error('[WP Debug] Failed to save state:', error);
     }
   }

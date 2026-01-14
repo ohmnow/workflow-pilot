@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Claude Code Workflow Pilot - Hook Entry Point
+ * Claude Code Claude Hero - Hook Entry Point
  * Version: 0.3.0
  *
  * This is the main entry point for the plugin's hooks.
@@ -127,7 +127,7 @@ function showTrainingIntentPrompt(): void {
   printBox([
     'What are you trying to accomplish today?',
     '',
-    'Workflow Pilot will guide you through',
+    'Claude Hero will guide you through',
     'Claude Code best practices as you work.',
   ], {
     title: 'Training Mode',
@@ -139,7 +139,7 @@ async function main(): Promise<void> {
   try {
     // Log hook invocation to file for verification
     const fs = await import('fs');
-    const logFile = '/tmp/workflow-pilot.log';
+    const logFile = '/tmp/claude-hero.log';
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logFile, `${timestamp} - Hook invoked\n`);
 
@@ -151,7 +151,7 @@ async function main(): Promise<void> {
     fs.appendFileSync(logFile, `${timestamp} - Event: ${input.hook_event_name}\n`);
 
     // Debug mode - output to stderr so it doesn't interfere with hook output
-    const DEBUG = process.env.WORKFLOW_PILOT_DEBUG === '1';
+    const DEBUG = process.env.CLAUDE_HERO_DEBUG === '1';
     if (DEBUG) {
       console.error('[WP Debug] Input:', JSON.stringify(input, null, 2));
     }
@@ -326,7 +326,7 @@ async function main(): Promise<void> {
         }
       }
       printBox(suggestionLines, {
-        title: `Workflow Pilot ${displayTime}`,
+        title: `Claude Hero ${displayTime}`,
         type: 'warning',
         minWidth: 45,
       });
@@ -371,7 +371,7 @@ async function main(): Promise<void> {
     process.exit(0);
   } catch (error) {
     // Log error but don't fail the hook (allow Claude to continue)
-    console.error('Workflow Pilot Error:', error);
+    console.error('Claude Hero Error:', error);
     process.exit(0);
   }
 }

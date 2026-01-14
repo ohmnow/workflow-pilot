@@ -207,7 +207,7 @@ export function getWorkerScriptPath(): string {
   const possiblePaths = [
     path.join(__dirname, '../../scripts/claude-worker.sh'),
     path.join(process.cwd(), 'scripts/claude-worker.sh'),
-    path.join(process.cwd(), 'node_modules/workflow-pilot/scripts/claude-worker.sh'),
+    path.join(process.cwd(), 'node_modules/claude-hero/scripts/claude-worker.sh'),
   ];
 
   for (const scriptPath of possiblePaths) {

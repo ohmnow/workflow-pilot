@@ -1,4 +1,4 @@
-# Claude Code Workflow Pilot
+# Claude Code Hero
 
 ## Project Overview
 An AI-powered Claude Code plugin that monitors conversation context and provides intelligent workflow guidance to help solo developers ship production-grade apps using professional development practices and agentic coding techniques.

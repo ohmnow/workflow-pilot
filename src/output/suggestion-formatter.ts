@@ -106,7 +106,7 @@ function formatConcise(suggestions: Suggestion[]): string {
     return `${icon} ${s.suggestion}`;
   });
 
-  return `[Workflow Pilot] ${lines.join(' | ')}`;
+  return `[Claude Hero] ${lines.join(' | ')}`;
 }
 
 /**
@@ -132,7 +132,7 @@ function formatDetailed(
   const parts: string[] = [];
 
   // Senior Engineer Voice - contextual guidance with session awareness
-  parts.push('<workflow-pilot-analysis>');
+  parts.push('<claude-hero-analysis>');
 
   // Include session metrics for Claude to reason about
   if (context) {
@@ -198,7 +198,7 @@ function formatDetailed(
   parts.push('</guidance>');
   parts.push('');
   parts.push('<instruction>Incorporate these considerations naturally. If suggesting code changes, mention testing. If the session is long, consider suggesting /compact.</instruction>');
-  parts.push('</workflow-pilot-analysis>');
+  parts.push('</claude-hero-analysis>');
 
   return parts.join('\n');
 }

@@ -211,7 +211,7 @@ export function findFeatureListFile(projectDir: string): string | null {
     'feature-list.json',
     'features.json',
     'tier2-features.json',
-    '.workflow-pilot.json',
+    '.claude-hero.json',
   ];
 
   for (const name of possibleNames) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Workflow Pilot Installer
+ * Claude Hero Installer
  *
  * Automatically installs the plugin into Claude Code by:
  * 1. Building the project (if needed)
@@ -83,11 +83,11 @@ function getHookConfig(pluginDir) {
 }
 
 function log(msg) {
-  console.log(`[Workflow Pilot] ${msg}`);
+  console.log(`[Claude Hero] ${msg}`);
 }
 
 function error(msg) {
-  console.error(`[Workflow Pilot Error] ${msg}`);
+  console.error(`[Claude Hero Error] ${msg}`);
 }
 
 /**
@@ -138,7 +138,7 @@ function writeConfigFile(_fs, configPath, mode) {
 }
 
 /**
- * Install the Workflow Pilot plugin
+ * Install the Claude Hero plugin
  * @param {Object} options - Installation options
  * @param {Object} options.fs - File system module (for testing)
  * @param {Function} options.execSync - execSync function (for testing)
@@ -178,7 +178,7 @@ async function install(options = {}) {
   log(`Selected mode: ${selectedMode}`);
 
   // Step 3: Write plugin config file
-  const configPath = path.join(pluginDir, '.workflow-pilot.json');
+  const configPath = path.join(pluginDir, '.claude-hero.json');
   writeConfigFile(_fs, configPath, selectedMode);
   log(`Configuration saved to ${configPath}`);
 
@@ -208,8 +208,8 @@ async function install(options = {}) {
 
   // Check if already installed
   const existingHooks = JSON.stringify(settings.hooks);
-  if (existingHooks.includes('workflow-pilot') || existingHooks.includes(pluginDir)) {
-    log('Workflow Pilot hooks already configured. Updating...');
+  if (existingHooks.includes('claude-hero') || existingHooks.includes(pluginDir)) {
+    log('Claude Hero hooks already configured. Updating...');
   }
 
   // Merge hooks (this will overwrite existing UserPromptSubmit/PostToolUse)
@@ -237,21 +237,21 @@ async function install(options = {}) {
   if (selectedMode === 'orchestrator') {
     log('🎯 Orchestrator Mode Active!');
     log('');
-    log('The Workflow Pilot will guide you from idea to production:');
+    log('Claude Hero will guide you from idea to production:');
     log('  • Feature planning with blocking dependencies');
     log('  • Sprint-based development cycles');
     log('  • Production readiness checks');
     log('');
     log('Start a new Claude Code session and describe what you want to build!');
   } else {
-    log('The Workflow Pilot is now active. It will provide suggestions on:');
+    log('Claude Hero is now active. It will provide suggestions on:');
     log('  • Testing workflow (run tests after code changes)');
     log('  • Git workflow (commit reminders, PR suggestions)');
     log('  • Claude Code best practices (Plan mode, subagents, skills)');
   }
 
   log('');
-  log('To change mode, edit .workflow-pilot.json or run installer again.');
+  log('To change mode, edit .claude-hero.json or run installer again.');
   log('To uninstall, run: node scripts/uninstall.js');
   log('');
 
